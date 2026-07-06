@@ -1,0 +1,28 @@
+# Binaries
+*.exe
+!release/*.exe
+dist/
+build/
+
+# Python
+__pycache__/
+venv/
+*.pyc
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Backup
+backup/
+
+# Claude
+.claude/
+
+# Temporary
+*.tmp
+*.log
