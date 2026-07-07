@@ -1041,24 +1041,72 @@ function updateProgress(){if(!audio.duration)return;if(isDragging)return;var p=(
 var audioCtx,analyser,freqData,waveformInited=false;
 function initWaveform(){if(waveformInited)return;try{audioCtx=new(window.AudioContext||window.webkitAudioContext)();audioCtx.resume();analyser=audioCtx.createAnalyser();analyser.fftSize=256;analyser.smoothingTimeConstant=0.8;var src=audioCtx.createMediaElementSource(audio);src.connect(analyser);analyser.connect(audioCtx.destination);freqData=new Uint8Array(analyser.frequencyBinCount);waveformInited=true;initILCanvas();}catch(e){}}
 var ilCanvasCtx,ilCanvas;
+// ═══ PARTICLE SYSTEM ═══
 var ilParticles=[];
-for(var pi=0;pi<120;pi++){ilParticles.push({x:Math.random(),y:Math.random(),vx:0,vy:0,r:Math.random()*1.5+0.3,phase:Math.random()*Math.PI*2,band:Math.floor(Math.random()*32)});}
-var ilAurora=[{y:0.3,speed:0.3,amp:0.08,phase:0},{y:0.45,speed:0.4,amp:0.06,phase:2.1},{y:0.6,speed:0.25,amp:0.1,phase:4.2}];
+for(var pi=0;pi<200;pi++){ilParticles.push({x:Math.random(),y:Math.random(),vx:0,vy:0,r:Math.random()*2+0.5,phase:Math.random()*Math.PI*2,band:Math.floor(Math.random()*32),life:1,speed:Math.random()*0.5+0.5});}
+var ilBursts=[];
+var ilLastLyricIdx=-1;
 function initILCanvas(){ilCanvas=$("ilCanvas");if(ilCanvas)ilCanvasCtx=ilCanvas.getContext("2d");}
-function drawILCanvas(){if(!ilCanvasCtx||!state.lyricsOpen)return;if(analyser&&freqData)analyser.getByteFrequencyData(freqData);var dpr=window.devicePixelRatio||1;var w=ilCanvas.width=ilCanvas.parentElement.clientWidth*dpr;var h=ilCanvas.height=ilCanvas.parentElement.clientHeight*dpr;var ctx=ilCanvasCtx;ctx.clearRect(0,0,w,h);var cx=w/2,cy=h*0.42,t=Date.now()*0.001;
-var bass=0,mid=0;if(analyser&&freqData){for(var i=0;i<8;i++)bass+=freqData[i];for(var i=8;i<32;i++)mid+=freqData[i];bass=bass/8/255;mid=mid/24/255;}
-// bg glow
-var bgR=Math.min(w,h)*0.5;var bg=ctx.createRadialGradient(cx,cy,0,cx,cy,bgR);bg.addColorStop(0,"rgba(10,132,255,"+(0.08+bass*0.12)+")");bg.addColorStop(0.5,"rgba(64,156,255,"+(0.03+bass*0.06)+")");bg.addColorStop(1,"rgba(0,0,0,0)");ctx.fillStyle=bg;ctx.fillRect(0,0,w,h);
-// aurora
-for(var a=0;a<ilAurora.length;a++){var b=ilAurora[a];ctx.save();var ay=b.y*h+Math.sin(t*b.speed+b.phase)*h*b.amp;var grad=ctx.createLinearGradient(0,ay-50*dpr,0,ay+50*dpr);var intensity=0.1+mid*0.2;grad.addColorStop(0,"rgba(10,132,255,0)");grad.addColorStop(0.3,"rgba(10,132,255,"+intensity+")");grad.addColorStop(0.5,"rgba(64,156,255,"+(intensity*1.3)+")");grad.addColorStop(0.7,"rgba(10,132,255,"+intensity+")");grad.addColorStop(1,"rgba(10,132,255,0)");ctx.fillStyle=grad;ctx.globalAlpha=0.4+bass*0.3;ctx.beginPath();ctx.moveTo(0,ay);for(var x=0;x<=w;x+=4*dpr){var fi=Math.floor((x/w)*32);var fv=(analyser&&freqData)?freqData[fi]/255:0.1;var wavey=Math.sin(x*0.003+t*b.speed+b.phase)*20*dpr;var fy=ay+wavey+fv*15*dpr*(a+1);ctx.lineTo(x,fy);}ctx.lineTo(w,ay+50*dpr);ctx.lineTo(0,ay+50*dpr);ctx.closePath();ctx.fill();ctx.restore();}
-// radial ripples
-for(var ring=0;ring<4;ring++){var baseR=(40+ring*40+bass*60)*dpr;var pts=80;var amp=(10+mid*50+ring*6)*dpr;ctx.save();ctx.beginPath();ctx.lineWidth=(2-ring*0.3)*dpr;ctx.lineJoin="round";ctx.globalAlpha=0.35-ring*0.06;ctx.shadowBlur=(15-ring*2)*dpr;ctx.shadowColor="rgba(10,132,255,0.4)";var rGrad=ctx.createRadialGradient(cx,cy,baseR-amp,cx,cy,baseR+amp);rGrad.addColorStop(0,"rgba(10,132,255,0)");rGrad.addColorStop(0.3,"rgba(10,132,255,0.25)");rGrad.addColorStop(0.5,"rgba(64,156,255,0.5)");rGrad.addColorStop(0.7,"rgba(10,132,255,0.25)");rGrad.addColorStop(1,"rgba(10,132,255,0)");ctx.strokeStyle=rGrad;for(var i=0;i<=pts;i++){var angle=(i/pts)*Math.PI*2;var fidx=Math.floor((i/pts)*32);var fval=(analyser&&freqData)?freqData[fidx]/255:0.1;var wave=Math.sin(angle*(2+ring)+t*(1+ring*0.2)+ring*0.7)*0.3;var r=baseR+(fval+wave)*amp;var px=cx+Math.cos(angle)*r;var py=cy+Math.sin(angle)*r;if(i===0)ctx.moveTo(px,py);else ctx.lineTo(px,py);}ctx.closePath();ctx.stroke();ctx.restore();}
-// center glow
-var glowR=(50+bass*150)*dpr;var cg=ctx.createRadialGradient(cx,cy,0,cx,cy,glowR);cg.addColorStop(0,"rgba(10,132,255,"+(0.18+bass*0.25)+")");cg.addColorStop(0.4,"rgba(64,156,255,"+(0.06+bass*0.12)+")");cg.addColorStop(1,"rgba(0,0,0,0)");ctx.fillStyle=cg;ctx.fillRect(0,0,w,h);
-// particles
-ctx.save();for(var i=0;i<ilParticles.length;i++){var p=ilParticles[i];var fval=(analyser&&freqData)?freqData[p.band]/255:0.1;var tx=(p.band+0.5)/32;var ty=0.5+Math.sin(p.band*0.5+t*0.8)*0.25*(1-fval);var pull=0.003+fval*0.02;p.vx+=(tx-p.x)*pull;p.vy+=(ty-p.y)*pull;p.vx*=0.93;p.vy*=0.93;p.vx+=Math.sin(t*2+p.phase)*0.0004;p.vy+=Math.cos(t*1.5+p.phase)*0.0004;p.x+=p.vx;p.y+=p.vy;if(p.x<0){p.x=0;p.vx*=-0.5;}if(p.x>1){p.x=1;p.vx*=-0.5;}if(p.y<0.05){p.y=0.05;p.vy*=-0.5;}if(p.y>0.95){p.y=0.95;p.vy*=-0.5;}var px=p.x*w;var py=p.y*h;var pr=(p.r+fval*2)*dpr;var alpha=0.12+fval*0.45+Math.sin(t*2+p.phase)*0.06;ctx.beginPath();ctx.arc(px,py,pr,0,Math.PI*2);ctx.fillStyle="rgba(10,132,255,"+Math.min(1,alpha)+")";ctx.shadowBlur=(4+fval*7)*dpr;ctx.shadowColor="rgba(10,132,255,"+(0.15+fval*0.35)+")";ctx.fill();}
-// connections
-ctx.lineWidth=0.3*dpr;ctx.shadowBlur=0;for(var i=0;i<ilParticles.length;i+=2){for(var j=i+2;j<ilParticles.length;j+=3){var dx=(ilParticles[i].x-ilParticles[j].x)*w;var dy=(ilParticles[i].y-ilParticles[j].y)*h;var dist=Math.sqrt(dx*dx+dy*dy);if(dist<50*dpr){var la=(1-dist/(50*dpr))*0.12;if(la>0.01){ctx.beginPath();ctx.moveTo(ilParticles[i].x*w,ilParticles[i].y*h);ctx.lineTo(ilParticles[j].x*w,ilParticles[j].y*h);ctx.strokeStyle="rgba(10,132,255,"+la+")";ctx.stroke();}}}}ctx.restore();ctx.shadowBlur=0;}
+
+function drawILCanvas(){if(!ilCanvasCtx||!state.lyricsOpen)return;
+if(analyser&&freqData)analyser.getByteFrequencyData(freqData);
+var dpr=window.devicePixelRatio||1;
+var w=ilCanvas.width=ilCanvas.parentElement.clientWidth*dpr;
+var h=ilCanvas.height=ilCanvas.parentElement.clientHeight*dpr;
+var ctx=ilCanvasCtx;ctx.clearRect(0,0,w,h);
+var cx=w/2,cy=h*0.45,t=Date.now()*0.001;
+var bass=0,mid=0,treble=0;
+if(analyser&&freqData){for(var i=0;i<8;i++)bass+=freqData[i];for(var i=8;i<32;i++)mid+=freqData[i];for(var i=32;i<64;i++)treble+=freqData[i];bass=bass/8/255;mid=mid/24/255;treble=treble/32/255;}
+
+// ── 1. 背景脉冲光晕 ──
+var bgR=Math.min(w,h)*0.55;
+var bg=ctx.createRadialGradient(cx,cy,0,cx,cy,bgR);
+bg.addColorStop(0,"rgba(10,132,255,"+(0.1+bass*0.2)+")");
+bg.addColorStop(0.3,"rgba(64,156,255,"+(0.04+bass*0.1)+")");
+bg.addColorStop(0.7,"rgba(10,80,200,"+(0.01+bass*0.05)+")");
+bg.addColorStop(1,"rgba(0,0,0,0)");
+ctx.fillStyle=bg;ctx.fillRect(0,0,w,h);
+
+// ── 2. 极光条带 (4层) ──
+var auroraBands=[{y:0.25,speed:0.25,amp:0.06,phase:0},{y:0.4,speed:0.35,amp:0.05,phase:1.5},{y:0.55,speed:0.2,amp:0.07,phase:3},{y:0.7,speed:0.3,amp:0.04,phase:4.5}];
+for(var a=0;a<auroraBands.length;a++){var ab=auroraBands[a];ctx.save();var ay=ab.y*h+Math.sin(t*ab.speed+ab.phase)*h*ab.amp;var grad=ctx.createLinearGradient(0,ay-80*dpr,0,ay+80*dpr);var intensity=0.08+mid*0.2;grad.addColorStop(0,"rgba(10,132,255,0)");grad.addColorStop(0.2,"rgba(10,132,255,"+intensity*0.5+")");grad.addColorStop(0.5,"rgba(64,156,255,"+intensity+")");grad.addColorStop(0.8,"rgba(10,132,255,"+intensity*0.5+")");grad.addColorStop(1,"rgba(10,132,255,0)");ctx.fillStyle=grad;ctx.globalAlpha=0.4+bass*0.3;ctx.beginPath();ctx.moveTo(0,ay);for(var x=0;x<=w;x+=3*dpr){var fi=Math.floor((x/w)*32);var fv=analyser&&freqData?freqData[fi]/255:0.08;var wavey=Math.sin(x*0.002+t*ab.speed+ab.phase)*30*dpr;var fy=ay+wavey+fv*25*dpr*(a+1);ctx.lineTo(x,fy);}ctx.lineTo(w,ay+80*dpr);ctx.lineTo(0,ay+80*dpr);ctx.closePath();ctx.fill();ctx.restore();}
+
+// ── 3. 径向波纹 (6层，随低音扩张) ──
+for(var ring=0;ring<6;ring++){var baseR=(30+ring*35+bass*70)*dpr;var pts=100;var amp=(8+mid*45+ring*6)*dpr;ctx.save();ctx.beginPath();ctx.lineWidth=(2.5-ring*0.3)*dpr;ctx.lineJoin="round";ctx.globalAlpha=0.35-ring*0.04;ctx.shadowBlur=(18-ring*2)*dpr;ctx.shadowColor="rgba(10,132,255,0.5)";var rGrad=ctx.createRadialGradient(cx,cy,baseR-amp,cx,cy,baseR+amp);rGrad.addColorStop(0,"rgba(10,132,255,0)");rGrad.addColorStop(0.2,"rgba(10,132,255,0.2)");rGrad.addColorStop(0.5,"rgba(64,156,255,0.5)");rGrad.addColorStop(0.8,"rgba(10,132,255,0.2)");rGrad.addColorStop(1,"rgba(10,132,255,0)");ctx.strokeStyle=rGrad;for(var i=0;i<=pts;i++){var angle=(i/pts)*Math.PI*2;var fidx=Math.floor((i/pts)*32);var fval=analyser&&freqData?freqData[fidx]/255:0.08;var wave=Math.sin(angle*(2+ring*0.5)+t*(0.8+ring*0.15)+ring*0.7)*0.35;var r=baseR+(fval+wave)*amp;var px=cx+Math.cos(angle)*r;var py=cy+Math.sin(angle)*r;if(i===0)ctx.moveTo(px,py);else ctx.lineTo(px,py);}ctx.closePath();ctx.stroke();ctx.restore();}
+
+// ── 4. 中心大光晕 ──
+var glowR=(50+bass*200)*dpr;
+var cg=ctx.createRadialGradient(cx,cy,0,cx,cy,glowR);
+cg.addColorStop(0,"rgba(10,132,255,"+(0.22+bass*0.3)+")");
+cg.addColorStop(0.3,"rgba(64,156,255,"+(0.1+bass*0.2)+")");
+cg.addColorStop(0.6,"rgba(10,80,200,"+(0.03+bass*0.08)+")");
+cg.addColorStop(1,"rgba(0,0,0,0)");
+ctx.fillStyle=cg;ctx.fillRect(0,0,w,h);
+
+// ── 5. 竖向光柱 (随频谱跳动) ──
+var beamCount=10;
+for(var b=0;b<beamCount;b++){var bx=(b/beamCount)*w+w/beamCount*0.5;var fbi=Math.floor((b/beamCount)*32);var fbv=analyser&&freqData?freqData[fbi]/255:0.05;if(fbv<0.12)continue;ctx.save();var beamH=h*(0.25+fbv*0.45);var beamGrad=ctx.createLinearGradient(bx,h,bx,h-beamH);beamGrad.addColorStop(0,"rgba(10,132,255,"+fbv*0.25+")");beamGrad.addColorStop(0.5,"rgba(64,156,255,"+fbv*0.12+")");beamGrad.addColorStop(1,"rgba(10,132,255,0)");ctx.fillStyle=beamGrad;ctx.globalAlpha=0.3+fbv*0.4;ctx.fillRect(bx-(6+fbv*12)*dpr*0.5,h-beamH,(6+fbv*12)*dpr,beamH);ctx.restore();}
+
+// ── 6. 粒子系统 (200个，跟随频谱运动) ──
+ctx.save();
+for(var i=0;i<ilParticles.length;i++){var p=ilParticles[i];var fval=analyser&&freqData?freqData[p.band]/255:0.08;var tx=(p.band+0.5)/32;var ty=0.45+Math.sin(p.band*0.5+t*0.6)*0.3*(1-fval);var pull=0.003+fval*0.02;p.vx+=(tx-p.x)*pull;p.vy+=(ty-p.y)*pull;p.vx*=0.93;p.vy*=0.93;p.vx+=Math.sin(t*2+p.phase)*0.0004;p.vy+=Math.cos(t*1.5+p.phase)*0.0004;p.x+=p.vx;p.y+=p.vy;if(p.x<0){p.x=0;p.vx*=-0.5;}if(p.x>1){p.x=1;p.vx*=-0.5;}if(p.y<0.03){p.y=0.03;p.vy*=-0.5;}if(p.y>0.97){p.y=0.97;p.vy*=-0.5;}var px=p.x*w;var py=p.y*h;var pr=(p.r+fval*2.5)*dpr;var alpha=0.1+fval*0.5+Math.sin(t*2+p.phase)*0.06;ctx.beginPath();ctx.arc(px,py,pr,0,Math.PI*2);ctx.fillStyle="rgba(10,132,255,"+Math.min(1,alpha)+")";ctx.shadowBlur=(4+fval*8)*dpr;ctx.shadowColor="rgba(10,132,255,"+(0.15+fval*0.4)+")";ctx.fill();}
+
+// ── 7. 粒子连线 (距离近的粒子之间) ──
+ctx.lineWidth=0.3*dpr;ctx.shadowBlur=0;
+for(var i=0;i<ilParticles.length;i+=2){for(var j=i+2;j<ilParticles.length;j+=4){var dx=(ilParticles[i].x-ilParticles[j].x)*w;var dy=(ilParticles[i].y-ilParticles[j].y)*h;var dist=Math.sqrt(dx*dx+dy*dy);if(dist<50*dpr){var la=(1-dist/(50*dpr))*0.1;if(la>0.005){ctx.beginPath();ctx.moveTo(ilParticles[i].x*w,ilParticles[i].y*h);ctx.lineTo(ilParticles[j].x*w,ilParticles[j].y*h);ctx.strokeStyle="rgba(10,132,255,"+la+")";ctx.stroke();}}}}
+
+// ── 8. 歌词行粒子爆发效果 ──
+if(state.currentLyricIndex>=0&&state.currentLyricIndex!==ilLastLyricIdx){
+  ilLastLyricIdx=state.currentLyricIndex;
+  var activeLine=document.querySelector("#ilBody .lyric-line.active");
+  if(activeLine){var rect=activeLine.getBoundingClientRect();var lx=(rect.left+rect.width/2)*dpr;var ly=(rect.top+rect.height/2)*dpr;
+  for(var b=0;b<30;b++){ilBursts.push({x:lx,y:ly,vx:(Math.random()-0.5)*3*dpr,vy:(Math.random()-0.5)*3*dpr,r:Math.random()*3*dpr+1*dpr,life:1,decay:0.015+Math.random()*0.01});}}}
+
+// 绘制爆发粒子
+for(var i=ilBursts.length-1;i>=0;i--){var bp=ilBursts[i];bp.x+=bp.vx;bp.y+=bp.vy;bp.vx*=0.96;bp.vy*=0.96;bp.life-=bp.decay;if(bp.life<=0){ilBursts.splice(i,1);continue;}ctx.beginPath();ctx.arc(bp.x,bp.y,bp.r*bp.life,0,Math.PI*2);ctx.fillStyle="rgba(10,132,255,"+bp.life*0.6+")";ctx.shadowBlur=6*dpr*bp.life;ctx.shadowColor="rgba(64,156,255,"+bp.life*0.4+")";ctx.fill();}
+
+ctx.restore();ctx.shadowBlur=0;
+}
 function animationLoop(){if(state.isPlaying&&audio.duration){updateLyricProgress();if(state.lyricsOpen)drawILCanvas();}requestAnimationFrame(animationLoop);}
 requestAnimationFrame(animationLoop);
 
