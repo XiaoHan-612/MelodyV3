@@ -179,28 +179,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 .track-row:nth-child(1){animation-delay:.02s}.track-row:nth-child(2){animation-delay:.04s}.track-row:nth-child(3){animation-delay:.06s}.track-row:nth-child(4){animation-delay:.08s}.track-row:nth-child(5){animation-delay:.1s}
 .track-row:nth-child(6){animation-delay:.12s}.track-row:nth-child(7){animation-delay:.14s}.track-row:nth-child(8){animation-delay:.16s}.track-row:nth-child(9){animation-delay:.18s}.track-row:nth-child(10){animation-delay:.2s}
 .song-cover.animate-in{animation:coverPop .45s var(--bounce) both}
-/* ═══ Custom Titlebar ═══ */
-.titlebar{position:fixed;top:0;left:0;right:0;height:36px;display:flex;align-items:center;justify-content:space-between;padding:0 12px 0 18px;background:var(--card);border-bottom:1px solid var(--border);z-index:100;-webkit-app-region:drag}
-.titlebar-brand{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:600;color:var(--text2)}
-.titlebar-brand svg{width:14px;height:14px;color:var(--accent)}
-.titlebar-btns{display:flex;gap:2px;-webkit-app-region:no-drag}
-.titlebar-btn{width:36px;height:28px;border:none;border-radius:6px;background:transparent;color:var(--text2);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s}
-.titlebar-btn:hover{background:var(--hover)}
-.titlebar-btn.close{color:var(--text3)}
-.titlebar-btn.close:hover{background:#e81123;color:#fff}
-.titlebar-btn svg{width:14px;height:14px}
-body{padding-top:36px}
 </style>
 </head>
 <body>
-<div class="titlebar" id="titlebar" onmousedown="App.startDrag()">
-  <div class="titlebar-brand"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>MelodyV3</div>
-  <div class="titlebar-btns">
-    <button class="titlebar-btn" onclick="App.minimize()" title="最小化"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
-    <button class="titlebar-btn" onclick="App.maximize()" title="最大化"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/></svg></button>
-    <button class="titlebar-btn close" onclick="App.close()" title="关闭"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
-  </div>
-</div>
 <div class="app">
   <nav class="sidebar">
     <div class="sb-brand"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>MelodyV3</div>
@@ -565,7 +546,7 @@ function init(){
   $("btnMode").innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">'+MODE_ICONS[S.mode]+'</svg>'
 }
 
-window.App={toggle:togglePlay,prev:playPrev,next:playNext,skip:skip,cycleMode:cycleMode,setSpeed:setSpeed,toggleSpeedMenu:toggleSpeed,toggleMute:toggleMute,toggleLyricPanel:toggleLyricPanel,openLyrics:openLyrics,closeLyrics:closeLyrics,toggleTranslation:toggleTrans,adjustLyricOffset:adjustOff,toggleTheme:toggleTheme,searchHist:function(k){$("searchInput").value=k;search(k)},clearHist:function(){localStorage.removeItem("melody_sh");renderHist()},addToPlaylist:function(i){var l=curList();if(l[i])addToPl(l[i])},removeFromPlaylist:rmFromPl,minimize:function(){window.titlebarAction&&titlebarAction("minimize")},maximize:function(){window.titlebarAction&&titlebarAction("maximize")},close:function(){window.titlebarAction&&titlebarAction("close")},startDrag:function(){window.startDrag&&startDrag()}};
+window.App={toggle:togglePlay,prev:playPrev,next:playNext,skip:skip,cycleMode:cycleMode,setSpeed:setSpeed,toggleSpeedMenu:toggleSpeed,toggleMute:toggleMute,toggleLyricPanel:toggleLyricPanel,openLyrics:openLyrics,closeLyrics:closeLyrics,toggleTranslation:toggleTrans,adjustLyricOffset:adjustOff,toggleTheme:toggleTheme,searchHist:function(k){$("searchInput").value=k;search(k)},clearHist:function(){localStorage.removeItem("melody_sh");renderHist()},addToPlaylist:function(i){var l=curList();if(l[i])addToPl(l[i])},removeFromPlaylist:rmFromPl};
 init();
 </script>
 </body>

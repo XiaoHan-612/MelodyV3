@@ -106,51 +106,8 @@ func main() {
 	w.SetTitle("MelodyV3")
 	w.Navigate(addr + "?v=" + fmt.Sprintf("%d_%d", time.Now().UnixNano(), time.Now().Unix()%1000))
 
-	// 设置初始大小
-	w.SetSize(1200, 800, webview2.HintNone)
-
-	// 去掉 Windows 标题栏
-	hwnd := w.Window()
-	if hwnd != nil {
-		user32 := syscall.NewLazyDLL("user32.dll")
-		gwlStyle := user32.NewProc("SetWindowLongW")
-		swp := user32.NewProc("SetWindowPos")
-		// 去掉 WS_CAPTION(0x00C00000) 和 WS_THICKFRAME(0x00040000)
-		style, _, _ := user32.NewProc("GetWindowLongW").Call(uintptr(hwnd), 0xFFFFFFFFFFFFFFF0)
-		style &^= 0x00C00000
-		style &^= 0x00040000
-		gwlStyle.Call(uintptr(hwnd), 0xFFFFFFFFFFFFFFF0, style)
-		swp.Call(uintptr(hwnd), 0, 0, 0, 0, 0, 0x0020|0x0002|0x0001|0x0004)
-	}
-
-	// 标题栏操作
-	w.Bind("titlebarAction", func(action string) string {
-		user32 := syscall.NewLazyDLL("user32.dll")
-		showWindow := user32.NewProc("ShowWindow")
-		switch action {
-		case "minimize":
-			showWindow.Call(uintptr(hwnd), 6)
-		case "maximize":
-			isZoomed, _, _ := user32.NewProc("IsZoomed").Call(uintptr(hwnd))
-			if isZoomed != 0 {
-				showWindow.Call(uintptr(hwnd), 9)
-			} else {
-				showWindow.Call(uintptr(hwnd), 3)
-			}
-		case "close":
-			w.Destroy()
-		}
-		return "ok"
-	})
-
-	// 窗口拖拽（通过 Win32 SendMessage HTCAPTION）
-	w.Bind("startDrag", func() string {
-		user32 := syscall.NewLazyDLL("user32.dll")
-		sendMessage := user32.NewProc("SendMessageW")
-		// WM_NCLBUTTONDOWN=0xA1, HTCAPTION=0x2
-		sendMessage.Call(uintptr(hwnd), 0xA1, 0x2, 0)
-		return "ok"
-	})
+	// 设置合理的默认大小（不全屏）
+	w.SetSize(1280, 720, webview2.HintNone)
 
 	w.Run()
 }
