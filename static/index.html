@@ -39,15 +39,19 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 .sb-search input::placeholder{color:var(--text3)}
 .sb-search input:focus{background:var(--card);box-shadow:0 0 0 2px rgba(var(--accent-rgb),.15)}
 .sb-label{padding:0 14px;margin:14px 0 6px;font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px}
-.nav-item{display:flex;align-items:center;gap:10px;padding:9px 14px;border-radius:10px;cursor:pointer;font-size:13px;font-weight:500;color:var(--text2);transition:color .2s,transform .15s var(--bounce)}
-.nav-item:active{transform:scale(.97)}.nav-item:hover{background:var(--hover);color:var(--text)}
-.nav-item.active{background:rgba(var(--accent-rgb),.12);color:var(--accent)}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 14px;border-radius:10px;cursor:pointer;font-size:13px;font-weight:500;color:var(--text2);position:relative;overflow:hidden;transition:color .25s var(--smooth),transform .15s var(--bounce),background .25s}
+.nav-item:active{transform:scale(.97)}
+.nav-item:hover{background:rgba(var(--accent-rgb),.06);color:var(--text)}
+.nav-item.active{background:var(--accent-bg2);color:var(--accent)}
+.nav-item.active::before{content:"";position:absolute;left:0;top:50%;transform:translateY(-50%);width:3px;height:60%;background:var(--accent);border-radius:0 3px 3px 0;animation:navIndicator .3s var(--spring)}
+@keyframes navIndicator{from{height:0;opacity:0}to{height:60%;opacity:1}}
 .nav-item svg{width:18px;height:18px;flex-shrink:0;opacity:.6}.nav-item.active svg{opacity:1}
 .nav-item .badge{font-size:10px;background:var(--accent);color:#fff;border-radius:10px;padding:1px 7px;margin-left:auto;font-weight:600}
 .source-pills{display:flex;gap:5px;flex-wrap:wrap;padding:0 6px}
-.source-pill{padding:5px 11px;border-radius:16px;font-size:11px;font-weight:600;background:var(--hover);color:var(--text2);cursor:pointer;border:none;font-family:inherit;transition:all .2s var(--smooth)}
-.source-pill:hover{background:rgba(var(--accent-rgb),.1);color:var(--accent)}
-.source-pill.active{background:var(--accent);color:#fff}
+.source-pill{padding:5px 11px;border-radius:16px;font-size:11px;font-weight:600;background:var(--hover);color:var(--text2);cursor:pointer;border:none;font-family:inherit;transition:all .25s var(--smooth)}
+.source-pill:hover{background:rgba(var(--accent-rgb),.1);color:var(--accent);box-shadow:0 2px 12px rgba(var(--accent-rgb),.1)}
+.source-pill:active{transform:scale(.95)}
+.source-pill.active{background:var(--accent);color:#fff;box-shadow:0 2px 16px rgba(var(--accent-rgb),.3)}
 .page-head{padding:28px 32px 12px;flex-shrink:0;display:flex;align-items:center;justify-content:space-between}
 .page-title{font-size:24px;font-weight:700}.page-sub{font-size:12px;color:var(--text2);margin-top:4px}
 .track-list{flex:1;overflow-y:auto;padding:0 32px 32px}
@@ -132,16 +136,17 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 .il-action-btn.active{background:var(--accent);color:#fff}
 
 /* Mineradio 风格歌词文字 */
-.il-body{position:relative;z-index:2;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:0 8%}
+.il-body{position:relative;z-index:2;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:0 5%}
 .il-canvas{position:absolute;inset:0;pointer-events:none;z-index:1}
 .il-lyric-line{
   font-size:clamp(34px,5.6vw,76px);font-weight:700;line-height:1.3;
   background:linear-gradient(180deg,#f6fdff 0%,#a8f6ff 55%,#7ecbff 100%);
   -webkit-background-clip:text;-webkit-text-fill-color:transparent;
   filter:drop-shadow(0 4px 22px rgba(143,233,255,.3));
-  animation:lyricIn .9s cubic-bezier(.16,.84,.32,1.02) both;
   max-width:85%;margin:0 auto;
+  transition:all .6s var(--spring);
 }
+.il-lyric-line.entering{animation:lyricIn .9s cubic-bezier(.16,.84,.32,1.02) both}
 @keyframes lyricIn{
   0%{opacity:0;transform:perspective(800px) translateZ(-40px) rotateX(8deg);filter:blur(12px) drop-shadow(0 4px 22px rgba(143,233,255,0))}
   100%{opacity:1;transform:perspective(800px) translateZ(0) rotateX(0);filter:drop-shadow(0 4px 22px rgba(143,233,255,.3))}
@@ -150,7 +155,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
   0%{opacity:1;transform:perspective(800px) translateZ(0) rotateX(0)}
   100%{opacity:0;transform:perspective(800px) translateZ(30px) rotateX(-5deg);filter:blur(8px)}
 }
-.il-translation{font-size:clamp(16px,2.5vw,24px);color:rgba(255,255,255,.4);margin-top:12px;font-weight:400}
+.il-translation{font-size:clamp(16px,2.5vw,24px);color:rgba(255,255,255,.4);margin-top:12px;font-weight:400;transition:all .5s var(--spring)}
 .il-next{position:absolute;bottom:15%;left:50%;transform:translateX(-50%);font-size:16px;color:rgba(255,255,255,.15);max-width:70%;text-align:center}
 
 .il-controls{position:relative;z-index:3;flex-shrink:0;padding:12px 10% 28px;display:flex;flex-direction:column;align-items:center;gap:12px}
@@ -307,7 +312,7 @@ function renderLrc(){var b=$("lyricBody");if(!S.lines.length){showLrcEmpty();ret
 function findTr(time){var best=null,bd=Infinity;for(var i=0;i<transLines.length;i++){var d=Math.abs(transLines[i].time-time);if(d<bd&&d<1){bd=d;best=transLines[i].text}}return best}
 function showLrcEmpty(){$("lyricBody").innerHTML='<div class="lyric-empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 6h16M4 12h12M4 18h8"/></svg><span>暂无歌词</span></div>'}
 function updateLrc(time){var adj=time-S.lyricOff,idx=-1;for(var i=0;i<S.lines.length;i++){if(S.lines[i].time<=adj)idx=i;else break}if(idx===S.lyricIdx)return;S.lyricIdx=idx;document.querySelectorAll("#lyricBody .lyric-line").forEach(function(el,i){el.classList.toggle("active",i===idx)});if(idx>=0){var el=document.querySelector("#lyricBody .lyric-line[data-index='"+idx+"']");if(el)el.scrollIntoView({behavior:"smooth",block:"center"})}renderIL()}
-function renderIL(){var cl=$("ilText"),tl=$("ilTitle"),al=$("ilArtist"),tr=$("ilTrans"),nx=$("ilNext");if(S.song){tl.textContent=S.song.title;al.textContent=S.song.artist}if(S.lyricIdx>=0&&S.lines[S.lyricIdx]){cl.textContent=S.lines[S.lyricIdx].text;cl.style.animation="none";void cl.offsetWidth;cl.style.animation="lyricIn .9s cubic-bezier(.16,.84,.32,1.02) both";cl.style.opacity="1";if(showTrans&&transLines.length){var tt=findTr(S.lines[S.lyricIdx].time);if(tr&&tt){tr.textContent=tt;tr.style.display="block"}else if(tr){tr.style.display="none"}}else if(tr){tr.style.display="none"}var ni=S.lyricIdx+1;if(nx)nx.textContent=(ni<S.lines.length)?S.lines[ni].text:""}else if(cl){cl.textContent="等待播放...";cl.style.opacity=".3";if(tr)tr.style.display="none";if(nx)nx.textContent=""}}
+function renderIL(){var cl=$("ilText"),tl=$("ilTitle"),al=$("ilArtist"),tr=$("ilTrans"),nx=$("ilNext");if(S.song){tl.textContent=S.song.title;al.textContent=S.song.artist}if(S.lyricIdx>=0&&S.lines[S.lyricIdx]){cl.textContent=S.lines[S.lyricIdx].text;cl.classList.remove("entering");void cl.offsetWidth;cl.classList.add("entering");cl.style.opacity="1";if(showTrans&&transLines.length){var tt=findTr(S.lines[S.lyricIdx].time);if(tr&&tt){tr.textContent=tt;tr.style.display="block"}else if(tr){tr.style.display="none"}}else if(tr){tr.style.display="none"}var ni=S.lyricIdx+1;if(nx)nx.textContent=(ni<S.lines.length)?S.lines[ni].text:""}else if(cl){cl.textContent="等待播放...";cl.style.opacity=".3";if(tr)tr.style.display="none";if(nx)nx.textContent=""}}
 function toggleTrans(){showTrans=!showTrans;renderLrc();var b=$("btnTranslation"),bf=$("ilTransBtn");if(b)b.style.color=showTrans?"var(--accent)":"";if(bf)bf.classList.toggle("active",showTrans);toast(showTrans?"显示翻译":"隐藏翻译")}
 function adjustOff(d){S.lyricOff+=d;var ds=$("lyricOffsetDisplay");if(ds)ds.textContent=S.lyricOff.toFixed(1)+"s";toast("歌词偏移: "+S.lyricOff.toFixed(1)+"s")}
 
@@ -333,43 +338,60 @@ function initMW(){mwc=$("mainWaveform");if(mwc)mwCtx=mwc.getContext("2d")}
 function drawMW(){if(!mwc)return;if(!mwCtx)mwCtx=mwc.getContext("2d");var w=mwc.width=window.innerWidth,h=mwc.height=60;if(w<10)return;var ctx=mwCtx,t=Date.now()*.001;ctx.clearRect(0,0,w,h);var has=analyser&&freqData;if(has)analyser.getByteFrequencyData(freqData);var bc=100,bw=w/bc,bg=2;for(var i=0;i<bc;i++){var fv=0;if(has){var fi=Math.floor((i/bc)*freqData.length*.7);fv=freqData[fi]/255}else{fv=.03+Math.sin(i*.12+t*1.5)*.02+Math.sin(i*.08+t*.8)*.015}var bh=Math.max(2,fv*h*.85),x=i*bw+bg/2,y=h-bh;var gr=ctx.createLinearGradient(x,h,x,y);gr.addColorStop(0,"rgba(0,122,255,.06)");gr.addColorStop(.4,"rgba(0,122,255,.5)");gr.addColorStop(.7,"rgba(64,156,255,.75)");gr.addColorStop(1,"rgba(100,180,255,.9)");ctx.fillStyle=gr;ctx.fillRect(x,y,bw-bg,bh);if(fv>.1){ctx.beginPath();ctx.arc(x+(bw-bg)/2,y,1.5,0,6.28);ctx.fillStyle="rgba(128,200,255,"+fv*.6+")";ctx.fill()}}}
 
 // IL Canvas
-var ilCtx,ilCv,bgP=[],txP=[],prevLI=-2,sparks=[];
+var ilCtx,ilCv;
 function initIL(){ilCv=$("ilCanvas");if(ilCv)ilCtx=ilCv.getContext("2d")}
-function txtPts(text,w,h){var c=document.createElement("canvas"),x=c.getContext("2d");c.width=w;c.height=h;var fs=Math.min(h*.35,Math.max(26,w/(text.length*.85)));x.fillStyle="#000";x.fillRect(0,0,w,h);x.fillStyle="#fff";x.font="900 "+fs+"px sans-serif";x.textAlign="center";x.textBaseline="middle";x.fillText(text,w/2,h/2);var d=x.getImageData(0,0,w,h).data,pts=[];for(var y=0;y<h;y+=2)for(var xi=0;xi<w;xi+=2)if(d[(y*w+xi)*4]>180)pts.push({x:xi,y:y});return pts}
-function mkBg(w,h){bgP=[];for(var i=0;i<800;i++)bgP.push({x:Math.random()*w,y:Math.random()*h,r:Math.random()*1.5+.3,vx:(Math.random()-.5)*.15,vy:(Math.random()-.5)*.12,ph:Math.random()*6.28,a:Math.random()*.25+.05})}
-function emitSp(cx,cy,n){for(var i=0;i<n;i++){var a=Math.random()*6.28,d=Math.random()*80+20;sparks.push({x:cx,y:cy,vx:Math.cos(a)*d*.04,vy:Math.sin(a)*d*.04,r:Math.random()*2+.8,life:1,decay:.012+Math.random()*.01})}}
 function drawIL(){
   if(!ilCtx||!S.lyricsOpen)return;
   var w=ilCv.width=ilCv.parentElement.clientWidth,h=ilCv.height=ilCv.parentElement.clientHeight;
   if(w<10||h<10)return;
-  var ctx=ilCtx,t=Date.now()*.001;
+  var ctx=ilCtx;
   ctx.clearRect(0,0,w,h);
-  // BG gradient
-  var g1=ctx.createLinearGradient(0,0,w,h);g1.addColorStop(0,"#080C18");g1.addColorStop(.5,"#0C1222");g1.addColorStop(1,"#080C18");ctx.fillStyle=g1;ctx.fillRect(0,0,w,h);
-  var g2=ctx.createRadialGradient(w/2,h/2,0,w/2,h/2,Math.min(w,h)*.45);g2.addColorStop(0,"rgba(0,50,120,.2)");g2.addColorStop(1,"rgba(0,0,0,0)");ctx.fillStyle=g2;ctx.fillRect(0,0,w,h);
-  // Stars
-  if(!bgP.length)mkBg(w,h);
-  ctx.save();
-  for(var i=0;i<bgP.length;i++){var p=bgP[i];p.x+=p.vx;p.y+=p.vy;if(p.x<0||p.x>w)p.vx*=-1;if(p.y<0||p.y>h)p.vy*=-1;var a=p.a*(.5+Math.sin(t+p.ph)*.4);ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,6.28);ctx.fillStyle="rgba(0,122,255,"+a+")";ctx.fill()}
-  ctx.restore();
-  // Lyric switch
-  if(S.lyricIdx!==prevLI){
-    prevLI=S.lyricIdx;
-    var text=S.lyricIdx>=0&&S.lines[S.lyricIdx]?S.lines[S.lyricIdx].text:"";
-    if(text){
-      var pts=txtPts(text,w,h);txP=[];var step=Math.max(1,Math.floor(pts.length/1200));var minT=Infinity,maxT=-Infinity;
-      for(var i=0;i<pts.length&&txP.length<1200;i+=step){var a=Math.random()*6.28,d=Math.max(w,h)*(.3+Math.random()*.7);txP.push({x:w/2+Math.cos(a)*d,y:h/2+Math.sin(a)*d,tX:pts[i].x,tY:pts[i].y,vx:0,vy:0,r:Math.random()*2+.8,ph:Math.random()*6.28,arr:false});if(pts[i].x<minT)minT=pts[i].x;if(pts[i].x>maxT)maxT=pts[i].x}
-      var rng=maxT-minT||1;txP.forEach(function(p){p.tp=(p.tX-minT)/rng});emitSp(w/2,h/2,120)
-    }else{txP=[]}
+  if(!S.lines.length||S.lyricIdx<0)return;
+  // Draw background lyrics (previous/next, blurred, scattered)
+  for(var i=Math.max(0,S.lyricIdx-3);i<S.lyricIdx;i++){
+    var line=S.lines[i];
+    var opacity=(S.lyricIdx-i)*0.12;
+    var yPos=h*0.12+((S.lyricIdx-1-i)*h*0.09);
+    drawBgLine(ctx,line.text,w/2,yPos,w*0.55,opacity);
   }
-  // Text particles
-  ctx.save();
-  for(var i=0;i<txP.length;i++){var p=txP[i];var dx=p.tX-p.x,dy=p.tY-p.y,d=Math.sqrt(dx*dx+dy*dy);if(d>1){p.vx+=dx*.055;p.vy+=dy*.055}p.vx*=.82;p.vy*=.82;p.x+=p.vx+Math.sin(t*2+p.ph)*.12;p.y+=p.vy+Math.cos(t*1.8+p.ph)*.12;if(d<1.5&&!p.arr)p.arr=true;var al=p.arr?.65:.2;var sz=p.r*(p.arr?1.1:.35);ctx.beginPath();ctx.arc(p.x,p.y,sz,0,6.28);ctx.fillStyle="rgba(80,160,255,"+al+")";if(p.arr){ctx.shadowBlur=4;ctx.shadowColor="rgba(0,122,255,.3)"}else{ctx.shadowBlur=0}ctx.fill()}
-  ctx.restore();ctx.shadowBlur=0;
-  // Sparks
-  ctx.save();
-  for(var i=sparks.length-1;i>=0;i--){var s=sparks[i];s.x+=s.vx;s.y+=s.vy;s.vx*=.96;s.vy*=.96;s.life-=s.decay;if(s.life<=0){sparks.splice(i,1);continue}ctx.beginPath();ctx.arc(s.x,s.y,s.r*s.life,0,6.28);ctx.fillStyle="rgba(0,200,255,"+s.life*.7+")";ctx.shadowBlur=6*s.life;ctx.shadowColor="rgba(0,180,255,"+s.life*.4+")";ctx.fill()}
-  ctx.restore();ctx.shadowBlur=0
+  for(var i=S.lyricIdx+1;i<Math.min(S.lines.length,S.lyricIdx+4);i++){
+    var line=S.lines[i];
+    var opacity=(i-S.lyricIdx)*0.12;
+    var yPos=h*0.62+((i-S.lyricIdx-1)*h*0.09);
+    drawBgLine(ctx,line.text,w/2,yPos,w*0.45,opacity);
+  }
+  // Active lyric with per-character highlight
+  var curLine=S.lines[S.lyricIdx];
+  var lineStart=curLine.time;
+  var nextLine=S.lines[S.lyricIdx+1];
+  var lineEnd=nextLine?nextLine.time:(audio.duration||lineStart+5);
+  var lineDur=lineEnd-lineStart;
+  var charProgress=0;
+  if(lineDur>0)charProgress=Math.max(0,Math.min(1,(audio.currentTime-S.lyricOff-lineStart)/lineDur));
+  drawActiveLine(ctx,curLine.text,w/2,h*0.4,w*0.85,charProgress);
+}
+function drawBgLine(ctx,text,cx,cy,maxW,opacity){
+  var fs=Math.min(26,Math.max(14,maxW/(text.length*0.8)));
+  ctx.save();ctx.font="400 "+fs+"px -apple-system,'PingFang SC',sans-serif";
+  ctx.textAlign="center";ctx.textBaseline="middle";
+  ctx.globalAlpha=Math.max(0,0.3-opacity*0.25);
+  ctx.fillStyle="rgba(168,246,255,0.4)";
+  ctx.filter="blur(2px)";ctx.fillText(text,cx,cy);ctx.restore();
+}
+function drawActiveLine(ctx,text,cx,cy,maxW,progress){
+  var fs=Math.min(76,Math.max(34,maxW/(text.length*0.7)));
+  ctx.save();ctx.font="700 "+fs+"px -apple-system,'PingFang SC',sans-serif";
+  ctx.textAlign="center";ctx.textBaseline="middle";
+  var chars=text.split("");var cw=[];var tw=0;
+  for(var i=0;i<chars.length;i++){var w2=ctx.measureText(chars[i]).width;cw.push(w2);tw+=w2}
+  var sx=cx-tw/2;var ci=Math.floor(progress*chars.length);var x=sx;
+  for(var i=0;i<chars.length;i++){
+    var lit=i<=ci;ctx.save();
+    if(lit){ctx.fillStyle="#f6fdff";ctx.shadowColor="rgba(10,132,255,.8)";ctx.shadowBlur=20;ctx.font="700 "+(fs*1.02)+"px -apple-system,'PingFang SC',sans-serif"}
+    else{ctx.fillStyle="rgba(168,246,255,.2)";ctx.shadowBlur=0}
+    ctx.fillText(chars[i],x+cw[i]/2,cy);ctx.restore();x+=cw[i];
+  }
+  ctx.restore();
 }
 
 // Controls
