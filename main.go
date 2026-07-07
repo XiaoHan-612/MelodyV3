@@ -104,8 +104,8 @@ func main() {
 	defer w.Destroy()
 
 	w.SetTitle("MelodyV3")
-	// 添加时间戳参数防止 WebView2 缓存旧 HTML
-	w.Navigate(addr + "?v=" + fmt.Sprintf("%d", time.Now().Unix()))
+	// 用纳秒时间戳+随机数确保每次启动URL唯一，强制WebView2加载最新HTML
+	w.Navigate(addr + "?v=" + fmt.Sprintf("%d_%d", time.Now().UnixNano(), time.Now().Unix()%1000))
 
 	// 最大化窗口
 	hwnd := w.Window()
