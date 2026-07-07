@@ -372,85 +372,95 @@ body {
 .immersive-lyrics {
   position: fixed; inset: 0; z-index: 1000;
   display: none; flex-direction: column;
-  background: #000; color: #fff;
+  background: linear-gradient(135deg, #0a0e1a 0%, #0d1528 30%, #0a1628 60%, #0e0a1a 100%);
+  color: #fff;
+  overflow: hidden;
 }
 .immersive-lyrics.show { display: flex; }
 
 .il-bg {
-  position: absolute; inset: -80px;
+  position: absolute; inset: -100px;
   background-size: cover; background-position: center;
-  filter: blur(100px) saturate(1.4) brightness(.12);
-  transform: scale(1.3);
-  animation: bgPulse 8s ease-in-out infinite alternate;
+  filter: blur(120px) saturate(1.6) brightness(.18);
+  transform: scale(1.4);
+  opacity: .6;
 }
 .il-bg::before {
   content: ""; position: absolute; inset: 0;
-  background: radial-gradient(ellipse at 50% 30%, rgba(10,132,255,.08) 0%, transparent 60%);
+  background: radial-gradient(ellipse at 50% 40%, rgba(10,132,255,.1) 0%, transparent 60%);
 }
 .il-bg::after {
   content: ""; position: absolute; inset: 0;
-  background: linear-gradient(180deg, rgba(0,0,0,.3) 0%, rgba(0,0,0,.55) 35%, rgba(0,0,0,.8) 100%);
+  background: linear-gradient(180deg, rgba(10,14,26,.3) 0%, rgba(10,14,26,.5) 50%, rgba(10,14,26,.8) 100%);
 }
-@keyframes bgPulse { 0% { filter: blur(100px) saturate(1.3) brightness(.12); } 100% { filter: blur(100px) saturate(1.5) brightness(.15); } }
 
 .il-header {
-  position: relative; z-index: 1;
+  position: relative; z-index: 2;
   display: flex; align-items: center; justify-content: space-between;
   padding: 20px 32px; flex-shrink: 0;
 }
 .il-back {
   width: 36px; height: 36px; border-radius: 50%; border: none;
-  background: rgba(255,255,255,.1); color: #fff; cursor: pointer;
+  background: rgba(255,255,255,.08); color: #fff; cursor: pointer;
   display: flex; align-items: center; justify-content: center;
   transition: background .2s;
 }
-.il-back:hover { background: rgba(255,255,255,.2); }
+.il-back:hover { background: rgba(255,255,255,.15); }
 .il-back svg { width: 18px; height: 18px; }
 .il-song-info { text-align: center; flex: 1; }
 .il-title { font-size: 16px; font-weight: 600; }
-.il-artist { font-size: 13px; color: rgba(255,255,255,.6); margin-top: 2px; }
+.il-artist { font-size: 13px; color: rgba(255,255,255,.5); margin-top: 2px; }
 .il-actions { display: flex; gap: 6px; }
 .il-action-btn {
   padding: 5px 10px; border-radius: 16px; border: none;
-  background: rgba(255,255,255,.1); color: rgba(255,255,255,.7);
+  background: rgba(255,255,255,.08); color: rgba(255,255,255,.6);
   font-size: 11px; font-weight: 600; cursor: pointer;
   font-family: inherit; transition: all .2s;
 }
-.il-action-btn:hover { background: rgba(255,255,255,.2); color: #fff; }
+.il-action-btn:hover { background: rgba(255,255,255,.15); color: #fff; }
 .il-action-btn.active { background: var(--accent); color: #fff; }
 
+/* 歌词主体：全屏居中，只显示当前句 */
 .il-body {
   position: relative; z-index: 1;
-  flex: 1; overflow-y: auto; text-align: center;
-  padding: 40px 10%; scroll-behavior: smooth;
-  mask: linear-gradient(transparent 0%, #000 12%, #000 88%, transparent 100%);
+  flex: 1; display: flex; align-items: center; justify-content: center;
+  text-align: center; padding: 0 10%;
 }
-.il-body::-webkit-scrollbar { width: 0; }
-
-.il-body .lyric-line { padding: 16px 0; line-height: 2.4; transition: all .5s cubic-bezier(.4,0,.2,1); }
-.il-body .lyric-line .text {
-  color: rgba(255,255,255,.2); font-size: 22px;
-  transition: all .5s cubic-bezier(.4,0,.2,1);
+.il-current-lyric {
+  font-size: 42px; font-weight: 800;
+  color: rgba(255,255,255,.95);
+  text-shadow: 0 0 40px rgba(10,132,255,.4), 0 0 80px rgba(10,132,255,.2);
+  max-width: 80%; line-height: 1.6;
+  animation: lyricFlyIn .7s cubic-bezier(.34,1.56,.64,1) both;
 }
-.il-body .lyric-line.active .text {
-  font-weight: 800; font-size: 36px;
-  color: #fff;
-  text-shadow: 0 0 30px rgba(10,132,255,.5), 0 0 60px rgba(10,132,255,.3);
-  animation: lyricFlyIn .6s cubic-bezier(.34,1.56,.64,1) both;
+.il-translation-line {
+  font-size: 18px; font-weight: 400;
+  color: rgba(255,255,255,.4);
+  margin-top: 12px;
+  animation: lyricFlyIn .7s .1s cubic-bezier(.34,1.56,.64,1) both;
+}
+.il-next-lyric {
+  position: absolute; bottom: 15%; left: 50%; transform: translateX(-50%);
+  font-size: 16px; color: rgba(255,255,255,.2);
+  max-width: 70%; text-align: center;
+  transition: all .5s;
 }
 @keyframes lyricFlyIn {
-  0% { opacity:0; transform:scale(0.6) translateY(30px); filter:blur(8px); }
+  0% { opacity:0; transform:scale(0.5) translateY(20px); filter:blur(10px); }
   100% { opacity:1; transform:scale(1) translateY(0); filter:blur(0); }
 }
-.il-body .lyric-line .translation { font-size: 14px; color: rgba(255,255,255,.4); margin-top: 4px; }
+@keyframes lyricFlyOut {
+  0% { opacity:1; transform:scale(1); }
+  100% { opacity:0; transform:scale(1.2) translateY(-30px); filter:blur(10px); }
+}
 
 .il-controls {
-  position: relative; z-index: 1;
+  position: relative; z-index: 2;
   flex-shrink: 0; padding: 16px 10% 32px;
   display: flex; flex-direction: column; align-items: center; gap: 14px;
 }
 .il-progress {
-  width: 100%; height: 4px; background: rgba(255,255,255,.12);
+  width: 100%; height: 4px; background: rgba(255,255,255,.08);
   cursor: pointer; position: relative; border-radius: 2px;
   transition: height .15s;
 }
@@ -467,13 +477,20 @@ body {
 }
 .il-progress:hover .il-progress-fill::after { opacity: 1; }
 .il-btns { display: flex; align-items: center; gap: 28px; }
-.il-btns .ctrl-btn { color: rgba(255,255,255,.7); width: 36px; height: 36px; }
-.il-btns .ctrl-btn:hover { color: #fff; background: rgba(255,255,255,.1); }
+.il-btns .ctrl-btn { color: rgba(255,255,255,.6); width: 36px; height: 36px; }
+.il-btns .ctrl-btn:hover { color: #fff; background: rgba(255,255,255,.08); }
 .il-btns .play-btn { width: 50px; height: 50px; }
 .il-btns .play-btn svg { width: 24px; height: 24px; }
 
 .il-canvas {
-  position: absolute; inset: 0; pointer-events: none; opacity: .5; z-index: 0;
+  position: absolute; inset: 0; pointer-events: none; opacity: .6; z-index: 0;
+}
+
+/* ═══ MAIN PAGE WAVEFORM ═══ */
+.main-waveform {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  height: 80px; pointer-events: none; z-index: 0;
+  opacity: .4;
 }
 
 /* ═══ MENUS ═══ */
@@ -654,7 +671,9 @@ body {
     </div>
   </div>
   <div class="il-body" id="ilBody">
-    <div class="lyric-empty" style="color:rgba(255,255,255,.3)"><span>暂无歌词</span></div>
+    <div class="il-current-lyric" id="ilCurrentLyric">等待播放...</div>
+    <div class="il-translation-line" id="ilTransLine" style="display:none"></div>
+    <div class="il-next-lyric" id="ilNextLyric"></div>
   </div>
   <div class="il-controls">
     <div class="il-progress" id="ilProgress">
@@ -675,6 +694,7 @@ body {
 </div>
 
 <!-- Player Bar -->
+<canvas class="main-waveform" id="mainWaveform"></canvas>
 <footer class="player-bar">
   <div class="progress-bar" id="progressBar">
     <div class="progress-fill" id="progressFill"></div>
@@ -955,15 +975,20 @@ function renderLyric() {
   b.innerHTML=html;
 }
 function renderImmersiveLyric() {
-  var b=$("ilBody");
-  if(!state.lyricLines.length){b.innerHTML='<div class="lyric-empty" style="color:rgba(255,255,255,.3)"><span>暂无歌词</span></div>';return;}
-  var html="";
-  state.lyricLines.forEach(function(l,i){
-    html+='<div class="lyric-line" data-index="'+i+'"><span class="text">'+escapeHtml(l.text)+'</span>';
-    if(showTranslation&&translationLines.length){var tr=findTrans(l.time);if(tr)html+='<div class="translation">'+escapeHtml(tr)+'</div>';}
-    html+='</div>';
-  });
-  b.innerHTML=html;
+  // 全屏歌词现在是单行居中显示，由 updateLyric 函数驱动
+  var cl=$("ilCurrentLyric");
+  var tl=$("ilTransLine");
+  var nl=$("ilNextLyric");
+  if(!state.lyricLines.length){cl.textContent="暂无歌词";tl.style.display="none";nl.textContent="";return;}
+  if(state.currentLyricIndex>=0&&state.currentLyricIndex<state.lyricLines.length){
+    cl.textContent=state.lyricLines[state.currentLyricIndex].text;
+    cl.style.animation="none";void cl.offsetWidth;cl.style.animation="lyricFlyIn .7s cubic-bezier(.34,1.56,.64,1) both";
+    // 翻译
+    if(showTranslation&&translationLines.length){var tr=findTrans(state.lyricLines[state.currentLyricIndex].time);if(tr){tl.textContent=tr;tl.style.display="block";tl.style.animation="none";void tl.offsetWidth;tl.style.animation="lyricFlyIn .7s .1s cubic-bezier(.34,1.56,.64,1) both";}else{tl.style.display="none";}}else{tl.style.display="none";}
+    // 下一句预览
+    var nextIdx=state.currentLyricIndex+1;
+    if(nextIdx<state.lyricLines.length){nl.textContent=state.lyricLines[nextIdx].text;}else{nl.textContent="";}
+  }else{cl.textContent="等待播放...";tl.style.display="none";nl.textContent="";}
 }
 function findTrans(time){var best=null,bd=Infinity;for(var i=0;i<translationLines.length;i++){var d=Math.abs(translationLines[i].time-time);if(d<bd&&d<1){bd=d;best=translationLines[i].text;}}return best;}
 function showLyricEmpty(){$("lyricBody").innerHTML='<div class="lyric-empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 6h16M4 12h12M4 18h8"/></svg><span>暂无歌词</span></div>';}
@@ -975,11 +1000,8 @@ function updateLyric(time) {
   // side panel
   document.querySelectorAll("#lyricBody .lyric-line").forEach(function(el,i){el.classList.toggle("active",i===idx);});
   if(idx>=0){var el=document.querySelector("#lyricBody .lyric-line[data-index='"+idx+"']");if(el)el.scrollIntoView({behavior:"smooth",block:"center"});}
-  // immersive
-  if(state.lyricsOpen){
-    document.querySelectorAll("#ilBody .lyric-line").forEach(function(el,i){el.classList.toggle("active",i===idx);});
-    if(idx>=0){var el2=document.querySelector("#ilBody .lyric-line[data-index='"+idx+"']");if(el2)el2.scrollIntoView({behavior:"smooth",block:"center"});}
-  }
+  // immersive single-line update
+  if(state.lyricsOpen)renderImmersiveLyric();
 }
 function updateLyricProgress() {
   if(state.currentLyricIndex<0||!state.lyricLines.length)return;
@@ -1043,145 +1065,147 @@ function updateProgress(){if(!audio.duration)return;if(isDragging)return;var p=(
 
 // ═══ WAVEFORM ═══
 var audioCtx,analyser,freqData,waveformInited=false;
-function initWaveform(){if(waveformInited)return;try{audioCtx=new(window.AudioContext||window.webkitAudioContext)();audioCtx.resume();analyser=audioCtx.createAnalyser();analyser.fftSize=256;analyser.smoothingTimeConstant=0.8;var src=audioCtx.createMediaElementSource(audio);src.connect(analyser);analyser.connect(audioCtx.destination);freqData=new Uint8Array(analyser.frequencyBinCount);waveformInited=true;initILCanvas();}catch(e){}}
+function initWaveform(){if(waveformInited)return;try{audioCtx=new(window.AudioContext||window.webkitAudioContext)();audioCtx.resume();analyser=audioCtx.createAnalyser();analyser.fftSize=256;analyser.smoothingTimeConstant=0.8;var src=audioCtx.createMediaElementSource(audio);src.connect(analyser);analyser.connect(audioCtx.destination);freqData=new Uint8Array(analyser.frequencyBinCount);waveformInited=true;initILCanvas();initMainWaveform();}catch(e){}}
+
+// ═══ MAIN PAGE WAVEFORM ═══
+var mainWaveCanvas,mainWaveCtx;
+function initMainWaveform(){mainWaveCanvas=$("mainWaveform");if(mainWaveCanvas)mainWaveCtx=mainWaveCanvas.getContext("2d");}
+function drawMainWaveform(){
+  if(!mainWaveCtx||!analyser||!freqData||!state.isPlaying)return;
+  analyser.getByteFrequencyData(freqData);
+  var dpr=window.devicePixelRatio||1;
+  var w=mainWaveCanvas.width=mainWaveCanvas.clientWidth*dpr;
+  var h=mainWaveCanvas.height=80*dpr;
+  var ctx=mainWaveCtx;ctx.clearRect(0,0,w,h);
+  var points=64;var step=Math.floor(freqData.length/points);
+  var samples=[];for(var i=0;i<points;i++){var sum=0;for(var j=0;j<step;j++)sum+=freqData[i*step+j];samples.push(sum/step/255);}
+  var layers=[{blur:12*dpr,width:2.5*dpr,alpha:0.4,yOff:0},{blur:6*dpr,width:1.5*dpr,alpha:0.5,yOff:-2*dpr},{blur:2*dpr,width:1*dpr,alpha:0.7,yOff:-3*dpr}];
+  for(var l=0;l<layers.length;l++){var layer=layers[l];ctx.save();ctx.beginPath();ctx.lineWidth=layer.width;ctx.lineJoin="round";ctx.lineCap="round";ctx.globalAlpha=layer.alpha;ctx.shadowBlur=layer.blur;ctx.shadowColor="rgba(0,122,255,0.4)";var grad=ctx.createLinearGradient(0,0,w,0);grad.addColorStop(0,"rgba(0,122,255,0.1)");grad.addColorStop(0.3,"rgba(0,122,255,0.6)");grad.addColorStop(0.5,"rgba(64,156,255,0.8)");grad.addColorStop(0.7,"rgba(0,122,255,0.6)");grad.addColorStop(1,"rgba(0,122,255,0.1)");ctx.strokeStyle=grad;var sliceW=w/(points-1);var baseY=h-4*dpr;var amp=(h-8*dpr)*0.5;for(var i=0;i<points;i++){var x=i*sliceW;var val=samples[i];var wave=Math.sin(i*0.3+Date.now()*0.002)*0.1;var y=baseY-(val+wave)*amp+layer.yOff;if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);}ctx.stroke();ctx.restore();}
+}
 var ilCanvasCtx,ilCanvas;
 // ═══ PARTICLE TEXT SYSTEM ═══
 var ilCanvasCtx,ilCanvas;
 var textParticles=[];
-var bgParticles=[];
-for(var pi=0;pi<100;pi++){bgParticles.push({x:Math.random(),y:Math.random(),vx:0,vy:0,r:Math.random()*1.5+0.3,phase:Math.random()*Math.PI*2,band:Math.floor(Math.random()*32)});}
 var ilLastLyricIdx=-1;
-var textAnimProgress=0;
-var textAnimStart=0;
-var TEXT_ANIM_DURATION=800;
+var PARTICLE_COUNT=500;
+var CONVERGE_SPEED=0.06;
+var SCATTER_SPEED=8;
 
 function initILCanvas(){ilCanvas=$("ilCanvas");if(ilCanvas)ilCanvasCtx=ilCanvas.getContext("2d");}
 
-// 从文字中采样粒子位置
-function sampleTextPositions(text,dpr,w,h){
+// 采样文字像素位置
+function sampleText(text,dpr,w,h){
   if(!text)return[];
-  var offscreen=document.createElement("canvas");
-  var ctx=offscreen.getContext("2d");
-  var fontSize=Math.min(60,Math.max(28,Math.floor(w/(text.length*0.7)/dpr)))*dpr;
-  offscreen.width=w;offscreen.height=h;
-  ctx.fillStyle="#fff";
-  ctx.font="bold "+fontSize+"px -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif";
+  var c=document.createElement("canvas"),ctx=c.getContext("2d");
+  var fontSize=Math.min(72,Math.max(32,Math.floor(w/(text.length*0.8)/dpr)))*dpr;
+  c.width=w;c.height=h;
+  ctx.fillStyle="#fff";ctx.font="800 "+fontSize+"px -apple-system,'PingFang SC','Microsoft YaHei',sans-serif";
   ctx.textAlign="center";ctx.textBaseline="middle";
   ctx.fillText(text,w/2,h/2);
-  var imgData=ctx.getImageData(0,0,w,h).data;
-  var positions=[];
-  var step=Math.max(2,Math.floor(4/dpr));
-  for(var y=0;y<h;y+=step*dpr){
-    for(var x=0;x<w;x+=step*dpr){
-      var idx=(y*w+x)*4;
-      if(imgData[idx+3]>128){positions.push({x:x,y:y});}}
-  }
-  return positions;
+  var data=ctx.getImageData(0,0,w,h).data;
+  var pts=[];
+  var step=Math.max(2,Math.floor(3/dpr));
+  for(var y=0;y<h;y+=step*dpr){for(var x=0;x<w;x+=step*dpr){if(data[(y*w+x)*4+3]>100)pts.push({x:x,y:y});}}
+  return pts;
 }
 
-// 文字粒子类
-function createTextParticle(tx,ty,w,h){
-  // 起始位置：从屏幕四周飞入
+// 创建粒子：从屏幕边缘飞入
+function spawnParticle(tx,ty,w,h){
   var side=Math.floor(Math.random()*4);
   var sx,sy;
-  if(side===0){sx=Math.random()*w;sy=-20;}          // 从上
-  else if(side===1){sx=w+20;sy=Math.random()*h;}    // 从右
-  else if(side===2){sx=Math.random()*w;sy=h+20;}    // 从下
-  else{sx=-20;sy=Math.random()*h;}                   // 从左
-  return{
-    x:sx,y:sy,
-    tx:tx,ty:ty,           // 目标位置
-    vx:0,vy:0,
-    r:Math.random()*2+1,
-    life:0,maxLife:1,
-    delay:Math.random()*200,  // 随机延迟
-    startTime:Date.now(),
-    phase:Math.random()*Math.PI*2,
-    color:Math.random()>0.5?"rgba(10,132,255,":"rgba(64,156,255,"
+  if(side===0){sx=Math.random()*w;sy=-30-dpr()*Math.random()*100;}
+  else if(side===1){sx=w+30+dpr()*Math.random()*100;sy=Math.random()*h;}
+  else if(side===2){sx=Math.random()*w;sy=h+30+dpr()*Math.random()*100;}
+  else{sx=-30-dpr()*Math.random()*100;sy=Math.random()*h;}
+  return{x:sx,y:sy,tx:tx,ty:ty,vx:(Math.random()-0.5)*4,vy:(Math.random()-0.5)*4,
+    r:Math.random()*2.5+1,phase:Math.random()*Math.PI*2,
+    arrived:false,life:1,
+    color:Math.random()>0.4?"rgba(10,132,255,":"rgba(64,156,255,"
   };
 }
+function dpr(){return window.devicePixelRatio||1;}
 
+// 主绘制函数
 function drawILCanvas(){if(!ilCanvasCtx||!state.lyricsOpen)return;
-if(analyser&&freqData)analyser.getByteFrequencyData(freqData);
-var dpr=window.devicePixelRatio||1;
-var w=ilCanvas.width=ilCanvas.parentElement.clientWidth*dpr;
-var h=ilCanvas.height=ilCanvas.parentElement.clientHeight*dpr;
+var _dpr=dpr();
+var w=ilCanvas.width=ilCanvas.parentElement.clientWidth*_dpr;
+var h=ilCanvas.height=ilCanvas.parentElement.clientHeight*_dpr;
 var ctx=ilCanvasCtx;ctx.clearRect(0,0,w,h);
-var cx=w/2,cy=h*0.45,t=Date.now()*0.001;
-var bass=0,mid=0;
-if(analyser&&freqData){for(var i=0;i<8;i++)bass+=freqData[i];for(var i=8;i<32;i++)mid+=freqData[i];bass=bass/8/255;mid=mid/24/255;}
+var t=Date.now()*0.001;
+var bass=0;if(analyser&&freqData){analyser.getByteFrequencyData(freqData);for(var i=0;i<8;i++)bass+=freqData[i];bass=bass/8/255;}
 
-// ── 背景光晕 ──
-var bgR=Math.min(w,h)*0.55;
-var bg=ctx.createRadialGradient(cx,cy,0,cx,cy,bgR);
-bg.addColorStop(0,"rgba(10,132,255,"+(0.12+bass*0.2)+")");
-bg.addColorStop(0.4,"rgba(64,156,255,"+(0.04+bass*0.08)+")");
-bg.addColorStop(1,"rgba(0,0,0,0)");
+// ── 渐变背景（不是纯黑）──
+var bg=ctx.createRadialGradient(w/2,h*0.4,0,w/2,h*0.4,Math.max(w,h)*0.6);
+bg.addColorStop(0,"rgba(10,20,40,"+(0.3+bass*0.2)+")");
+bg.addColorStop(0.5,"rgba(5,10,25,"+(0.2+bass*0.1)+")");
+bg.addColorStop(1,"rgba(10,14,26,0.1)");
 ctx.fillStyle=bg;ctx.fillRect(0,0,w,h);
 
-// ── 极光条带 ──
-var auroraBands=[{y:0.3,speed:0.2,amp:0.05,phase:0},{y:0.5,speed:0.3,amp:0.04,phase:2},{y:0.7,speed:0.25,amp:0.06,phase:4}];
-for(var a=0;a<auroraBands.length;a++){var ab=auroraBands[a];ctx.save();var ay=ab.y*h+Math.sin(t*ab.speed+ab.phase)*h*ab.amp;var grad=ctx.createLinearGradient(0,ay-60*dpr,0,ay+60*dpr);var intensity=0.06+mid*0.15;grad.addColorStop(0,"rgba(10,132,255,0)");grad.addColorStop(0.3,"rgba(10,132,255,"+intensity+")");grad.addColorStop(0.5,"rgba(64,156,255,"+intensity*1.3+")");grad.addColorStop(0.7,"rgba(10,132,255,"+intensity+")");grad.addColorStop(1,"rgba(10,132,255,0)");ctx.fillStyle=grad;ctx.globalAlpha=0.35+bass*0.25;ctx.beginPath();ctx.moveTo(0,ay);for(var x=0;x<=w;x+=4*dpr){var fv=analyser&&freqData?freqData[Math.floor((x/w)*32)]/255:0.05;ctx.lineTo(x,ay+Math.sin(x*0.002+t*ab.speed+ab.phase)*20*dpr+fv*18*dpr*(a+1));}ctx.lineTo(w,ay+60*dpr);ctx.lineTo(0,ay+60*dpr);ctx.closePath();ctx.fill();ctx.restore();}
+// ── 微弱的极光背景 ──
+ctx.save();ctx.globalAlpha=0.15+bass*0.1;
+var aGrad=ctx.createLinearGradient(0,h*0.2,w,h*0.8);
+aGrad.addColorStop(0,"rgba(10,132,255,0.1)");
+aGrad.addColorStop(0.3,"rgba(64,156,255,0.15)");
+aGrad.addColorStop(0.6,"rgba(10,80,200,0.1)");
+aGrad.addColorStop(1,"rgba(64,156,255,0.05)");
+ctx.fillStyle=aGrad;
+ctx.beginPath();
+for(var x=0;x<=w;x+=6*_dpr){var fv=analyser&&freqData?freqData[Math.floor((x/w)*32)]/255:0.03;var y=h*0.5+Math.sin(x*0.001+t*0.3)*50*_dpr+fv*30*_dpr;ctx.lineTo(x,y);}
+ctx.lineTo(w,h);ctx.lineTo(0,h);ctx.closePath();ctx.fill();ctx.restore();
 
-// ── 径向波纹 ──
-for(var ring=0;ring<4;ring++){var baseR=(25+ring*30+bass*50)*dpr;ctx.save();ctx.beginPath();ctx.lineWidth=(2-ring*0.3)*dpr;ctx.globalAlpha=0.3-ring*0.05;ctx.shadowBlur=(12-ring*2)*dpr;ctx.shadowColor="rgba(10,132,255,0.4)";var rGrad=ctx.createRadialGradient(cx,cy,baseR-15*dpr,cx,cy,baseR+15*dpr);rGrad.addColorStop(0,"rgba(10,132,255,0)");rGrad.addColorStop(0.5,"rgba(64,156,255,0.4)");rGrad.addColorStop(1,"rgba(10,132,255,0)");ctx.strokeStyle=rGrad;var pts=80;for(var i=0;i<=pts;i++){var angle=(i/pts)*Math.PI*2;var fval=analyser&&freqData?freqData[Math.floor((i/pts)*32)]/255:0.05;var r=baseR+(fval+Math.sin(angle*(2+ring)+t*(0.8+ring*0.15))*0.3)*15*dpr;var px=cx+Math.cos(angle)*r;var py=cy+Math.sin(angle)*r;if(i===0)ctx.moveTo(px,py);else ctx.lineTo(px,py);}ctx.closePath();ctx.stroke();ctx.restore();}
-
-// ── 背景粒子 ──
-ctx.save();for(var i=0;i<bgParticles.length;i++){var p=bgParticles[i];var fval=analyser&&freqData?freqData[p.band]/255:0.05;p.vx+=(Math.random()-0.5)*0.001;p.vy+=(Math.random()-0.5)*0.001;p.vx*=0.99;p.vy*=0.99;p.x+=p.vx;p.y+=p.vy;if(p.x<0||p.x>1)p.vx*=-1;if(p.y<0||p.y>1)p.vy*=-1;var px=p.x*w;var py=p.y*h;var pr=(p.r+fval*1.5)*dpr;var alpha=0.08+fval*0.3;ctx.beginPath();ctx.arc(px,py,pr,0,Math.PI*2);ctx.fillStyle="rgba(10,132,255,"+alpha+")";ctx.shadowBlur=4*dpr;ctx.shadowColor="rgba(10,132,255,"+alpha*0.6+")";ctx.fill();}ctx.restore();
-
-// ── 文字粒子（核心效果）─ ──
-var now=Date.now();
-ctx.save();
-for(var i=0;i<textParticles.length;i++){var p=textParticles[i];
-  var elapsed=now-p.startTime;
-  if(elapsed<p.delay)continue;
-  var progress=Math.min(1,(elapsed-p.delay)/TEXT_ANIM_DURATION);
-  // 弹性缓动
-  var ease=1-Math.pow(1-progress,3)*Math.cos(progress*Math.PI*2*0.5);
-  ease=Math.max(0,Math.min(1.05,ease));
-  // 飞入到目标位置
-  p.x+=(p.tx-p.x)*0.08;
-  p.y+=(p.ty-p.y)*0.08;
-  // 微小抖动
-  p.x+=Math.sin(t*3+p.phase)*0.5*dpr;
-  p.y+=Math.cos(t*2.5+p.phase)*0.5*dpr;
-  var alpha=ease*0.9;
-  var sz=p.r*ease*dpr;
-  ctx.beginPath();ctx.arc(p.x,p.y,sz,0,Math.PI*2);
-  ctx.fillStyle=p.color+alpha+")";
-  ctx.shadowBlur=6*dpr*ease;ctx.shadowColor=p.color+alpha*0.5+")";
-  ctx.fill();
-}
-// 粒子连线
-ctx.lineWidth=0.2*dpr;ctx.shadowBlur=0;
-for(var i=0;i<textParticles.length;i+=3){
-  for(var j=i+3;j<Math.min(i+15,textParticles.length);j+=2){
-    var dx=textParticles[i].x-textParticles[j].x;var dy=textParticles[i].y-textParticles[j].y;
-    var dist=Math.sqrt(dx*dx+dy*dy);
-    if(dist<20*dpr){var la=(1-dist/(20*dpr))*0.08;if(la>0.005){ctx.beginPath();ctx.moveTo(textParticles[i].x,textParticles[i].y);ctx.lineTo(textParticles[j].x,textParticles[j].y);ctx.strokeStyle="rgba(64,156,255,"+la+")";ctx.stroke();}}}}
-ctx.restore();ctx.shadowBlur=0;
-
-// ── 检测歌词切换，重新生成文字粒子 ──
+// ── 检测歌词切换 ──
 if(state.currentLyricIndex!==ilLastLyricIdx){
   ilLastLyricIdx=state.currentLyricIndex;
-  if(state.currentLyricIndex>=0&&state.lyricLines[state.currentLyricIndex]){
-    var text=state.lyricLines[state.currentLyricIndex].text;
-    var positions=sampleTextPositions(text,dpr,w,h);
-    // 采样后重新生成粒子
-    var newParticles=[];
-    var maxParticles=Math.min(positions.length,600);
-    var step=Math.max(1,Math.floor(positions.length/maxParticles));
-    for(var i=0;i<positions.length;i+=step){
-      if(newParticles.length>=maxParticles)break;
-      newParticles.push(createTextParticle(positions[i].x,positions[i].y,w,h));
+  var text="";
+  if(state.currentLyricIndex>=0&&state.lyricLines[state.currentLyricIndex])
+    text=state.lyricLines[state.currentLyricIndex].text;
+  if(text){
+    var positions=sampleText(text,_dpr,w,h);
+    var newP=[];
+    var maxP=Math.min(positions.length,PARTICLE_COUNT);
+    var step=Math.max(1,Math.floor(positions.length/maxP));
+    for(var i=0;i<positions.length&&newP.length<maxP;i+=step){
+      newP.push(spawnParticle(positions[i].x,positions[i].y,w,h));
     }
-    textParticles=newParticles;
-  }else{
-    textParticles=[];
-  }
+    textParticles=newP;
+  }else{textParticles=[];}
 }
+
+// ── 绘制粒子 ──
+ctx.save();
+for(var i=0;i<textParticles.length;i++){
+  var p=textParticles[i];
+  // 飞向目标
+  var dx=p.tx-p.x,dy=p.ty-p.y;
+  var dist=Math.sqrt(dx*dx+dy*dy);
+  if(dist>2){p.vx+=dx*CONVERGE_SPEED;p.vy+=dy*CONVERGE_SPEED;}
+  p.vx*=0.88;p.vy*=0.88;
+  // 微抖动
+  p.x+=p.vx+Math.sin(t*3+p.phase)*0.3*_dpr;
+  p.y+=p.vy+Math.cos(t*2.5+p.phase)*0.3*_dpr;
+  // 到达判断
+  if(dist<3&&!p.arrived)p.arrived=true;
+  // 绘制
+  var alpha=p.arrived?(0.7+Math.sin(t*2+p.phase)*0.2):0.5;
+  var sz=p.r*_dpr*(p.arrived?1:0.8);
+  ctx.beginPath();ctx.arc(p.x,p.y,sz,0,Math.PI*2);
+  ctx.fillStyle=p.color+alpha+")";
+  ctx.shadowBlur=(p.arrived?6:3)*_dpr;ctx.shadowColor=p.color+alpha*0.5+")";
+  ctx.fill();
 }
-function animationLoop(){if(state.isPlaying&&audio.duration){updateLyricProgress();if(state.lyricsOpen)drawILCanvas();}requestAnimationFrame(animationLoop);}
+
+// ── 粒子连线（到达后才连线）──
+ctx.lineWidth=0.2*_dpr;ctx.shadowBlur=0;
+for(var i=0;i<textParticles.length;i+=4){
+  if(!textParticles[i].arrived)continue;
+  for(var j=i+4;j<Math.min(i+20,textParticles.length);j+=3){
+    if(!textParticles[j].arrived)continue;
+    var dx2=textParticles[i].x-textParticles[j].x;var dy2=textParticles[i].y-textParticles[j].y;
+    var d2=Math.sqrt(dx2*dx2+dy2*dy2);
+    if(d2<18*_dpr){var la=(1-d2/(18*_dpr))*0.12;if(la>0.005){ctx.beginPath();ctx.moveTo(textParticles[i].x,textParticles[i].y);ctx.lineTo(textParticles[j].x,textParticles[j].y);ctx.strokeStyle="rgba(64,156,255,"+la+")";ctx.stroke();}}}}
+ctx.restore();ctx.shadowBlur=0;
+}
+function animationLoop(){if(state.isPlaying&&audio.duration){updateLyricProgress();if(state.lyricsOpen)drawILCanvas();drawMainWaveform();}requestAnimationFrame(animationLoop);}
 requestAnimationFrame(animationLoop);
 
 // ═══ MODE / SPEED / VOLUME ═══
