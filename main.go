@@ -106,8 +106,12 @@ func main() {
 	w.SetTitle("MelodyV3")
 	w.Navigate(addr + "?v=" + fmt.Sprintf("%d_%d", time.Now().UnixNano(), time.Now().Unix()%1000))
 
-	// 设置合理的默认大小（不全屏）
-	w.SetSize(1280, 720, webview2.HintNone)
+	// 设置默认全屏
+	hwnd := w.Window()
+	if hwnd != nil {
+		user32 := syscall.NewLazyDLL("user32.dll")
+		user32.NewProc("ShowWindow").Call(uintptr(hwnd), 3) // SW_MAXIMIZE
+	}
 
 	w.Run()
 }
