@@ -2002,12 +2002,12 @@ function renderTrackList(songs, listType) {
     }
 
     html += '<div class="actions">';
-    html += '<button class="action-btn" onclick="event.stopPropagation();App.addToPlaylist(' + i + ')" title="添加到歌单">';
+    html += '<button class="action-btn add-btn" data-index="' + i + '" title="添加到歌单">';
     html += '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>';
     html += '</button>';
 
     if (listType === "playlist") {
-      html += '<button class="action-btn" onclick="event.stopPropagation();App.removeFromPlaylist(' + i + ')" title="从歌单移除">';
+      html += '<button class="action-btn remove-btn" data-index="' + i + '" title="从歌单移除">';
       html += '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
       html += '</button>';
     }
@@ -2020,7 +2020,9 @@ function renderTrackList(songs, listType) {
 
   // 绑定点击事件
   container.querySelectorAll(".track").forEach(function(el) {
-    el.addEventListener("click", function() {
+    el.addEventListener("click", function(e) {
+      // 如果点击的是按钮区域，不触发播放
+      if (e.target.closest(".action-btn")) return;
       var index = parseInt(el.dataset.index);
       var type = el.dataset.type;
       var list = type === "search" ? state.searchResults : (type === "playlist" ? state.playlist : type === "queue" ? getCurrentList() : state.recent);
@@ -2036,6 +2038,25 @@ function renderTrackList(songs, listType) {
       if (list[index]) {
         showContextMenu(e, list[index], index, type);
       }
+    });
+  });
+
+  // 绑定添加/移除按钮
+  container.querySelectorAll(".add-btn").forEach(function(btn) {
+    btn.addEventListener("click", function(e) {
+      e.stopPropagation();
+      var index = parseInt(btn.dataset.index);
+      var type = btn.closest(".track").dataset.type;
+      var list = type === "search" ? state.searchResults : (type === "playlist" ? state.playlist : type === "queue" ? getCurrentList() : state.recent);
+      if (list[index]) addToPlaylist(list[index]);
+    });
+  });
+
+  container.querySelectorAll(".remove-btn").forEach(function(btn) {
+    btn.addEventListener("click", function(e) {
+      e.stopPropagation();
+      var index = parseInt(btn.dataset.index);
+      removeFromPlaylist(index);
     });
   });
 }
