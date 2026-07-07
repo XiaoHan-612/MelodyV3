@@ -54,10 +54,6 @@ body {
   transition: background var(--transition), color var(--transition);
 }
 
-*, *::before, *::after {
-  transition: background var(--transition), color var(--transition), border-color var(--transition), box-shadow var(--transition);
-}
-
 /* ═══════════════════════════════════════════════
    滚动条
 ═══════════════════════════════════════════════ */
@@ -2978,35 +2974,41 @@ var isMiniMode = false;
 function toggleMiniMode() {
   isMiniMode = !isMiniMode;
   var app = document.querySelector(".app");
+  var sidebar = document.querySelector(".sidebar");
+  var content = document.querySelector(".content");
+  var lyricPanel = document.getElementById("lyricPanel");
+  var waveBg = document.getElementById("waveformBg");
   var playerBar = document.querySelector(".player-bar");
 
   if (isMiniMode) {
-    app.style.display = "none";
-    playerBar.style.position = "fixed";
-    playerBar.style.bottom = "0";
-    playerBar.style.left = "0";
-    playerBar.style.right = "0";
-    playerBar.style.top = "0";
-    playerBar.style.zIndex = "100";
-    playerBar.style.borderTop = "none";
-    playerBar.style.display = "flex";
-    playerBar.style.flexDirection = "column";
-    // 隐藏进度条上方的空间，让内容更紧凑
-    var progressBar = playerBar.querySelector(".progress-bar");
-    if (progressBar) progressBar.style.display = "none";
+    if (sidebar) sidebar.style.display = "none";
+    if (content) content.style.display = "none";
+    if (lyricPanel) lyricPanel.style.display = "none";
+    if (waveBg) waveBg.style.display = "none";
+    // 进度条保持可见，播放栏居中显示
+    if (playerBar) {
+      playerBar.style.flex = "1";
+      playerBar.style.alignItems = "center";
+    }
+    // 封面加大
+    var cover = document.querySelector(".song-cover");
+    var ph = document.getElementById("coverPlaceholder");
+    if (cover) { cover.style.width = "64px"; cover.style.height = "64px"; cover.style.borderRadius = "10px"; }
+    if (ph) { ph.style.width = "64px"; ph.style.height = "64px"; ph.style.borderRadius = "10px"; }
     toast("迷你模式");
   } else {
-    app.style.display = "flex";
-    playerBar.style.position = "";
-    playerBar.style.bottom = "";
-    playerBar.style.left = "";
-    playerBar.style.right = "";
-    playerBar.style.top = "";
-    playerBar.style.zIndex = "";
-    playerBar.style.borderTop = "";
-    playerBar.style.flexDirection = "";
-    var progressBar = playerBar.querySelector(".progress-bar");
-    if (progressBar) progressBar.style.display = "";
+    if (sidebar) sidebar.style.display = "";
+    if (content) content.style.display = "";
+    if (lyricPanel) lyricPanel.style.display = state.lyricVisible ? "flex" : "none";
+    if (waveBg) waveBg.style.display = "";
+    if (playerBar) {
+      playerBar.style.flex = "";
+      playerBar.style.alignItems = "";
+    }
+    var cover = document.querySelector(".song-cover");
+    var ph = document.getElementById("coverPlaceholder");
+    if (cover) { cover.style.width = ""; cover.style.height = ""; cover.style.borderRadius = ""; }
+    if (ph) { ph.style.width = ""; ph.style.height = ""; ph.style.borderRadius = ""; }
     toast("完整模式");
   }
 }
