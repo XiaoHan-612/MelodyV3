@@ -608,7 +608,7 @@ body {
         <button class="ctrl-btn" onclick="App.adjustLyricOffset(-0.5)" title="提前0.5s" style="font-size:10px;width:auto;padding:0 6px;">-0.5s</button>
         <span id="lyricOffsetDisplay" style="font-size:10px;color:var(--text3);min-width:28px;text-align:center;">0s</span>
         <button class="ctrl-btn" onclick="App.adjustLyricOffset(0.5)" title="延后0.5s" style="font-size:10px;width:auto;padding:0 6px;">+0.5s</button>
-        <button class="ctrl-btn" onclick="App.openLyricFullscreen()" title="全屏歌词">
+        <button class="ctrl-btn" onclick="App.openLyrics()" title="全屏歌词">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
         </button>
         <button class="ctrl-btn" onclick="App.toggleLyricPanel()">
@@ -866,6 +866,11 @@ function playSong(song,index,listType) {
     };
     if(state.isPlaying&&!audio.paused) fadeOutAudio(doPlay); else doPlay();
   });
+  document.querySelectorAll(".track-row").forEach(function(el){el.style.background="";});
+  // highlight will be set on next render
+  if(state.currentTab==="playlist")renderTrackList(state.playlist,"playlist");
+  else if(state.currentTab==="search")renderTrackList(state.searchResults,"search");
+  else if(state.currentTab==="recent")renderTrackList(state.recent,"recent");
   updateNavButtons();
 }
 function togglePlay() { if(!state.currentSong)return; if(audio.paused){audio.play();state.isPlaying=true;}else{audio.pause();state.isPlaying=false;} updatePlayButton(); }
@@ -992,22 +997,24 @@ function addToRecent(song){state.recent=state.recent.filter(function(s){return!(
 function renderTrackList(songs,listType) {
   var c=$("trackList");
   if(!songs||!songs.length){showEmptyState();return;}
-  var html='<table style="width:100%;border-collapse:collapse">';
-  html+='<thead><tr style="border-bottom:1px solid var(--border)"><th style="text-align:left;padding:8px 12px;font-size:11px;color:var(--text3);font-weight:600;width:40px">#</th><th style="text-align:left;padding:8px 0;font-size:11px;color:var(--text3);font-weight:600">歌曲</th><th style="text-align:left;padding:8px 12px;font-size:11px;color:var(--text3);font-weight:600;width:80px">来源</th><th style="text-align:right;padding:8px 12px;font-size:11px;color:var(--text3);font-weight:600;width:60px">时长</th></tr></thead><tbody>';
+  var html='<div style="padding:0">';
+  html+='<div style="display:grid;grid-template-columns:40px 1fr 80px 60px;padding:8px 16px;font-size:11px;color:var(--text3);font-weight:600;border-bottom:1px solid var(--border);text-transform:uppercase;letter-spacing:.5px">';
+  html+='<span>#</span><span>歌曲</span><span>来源</span><span style="text-align:right">时长</span></div>';
   songs.forEach(function(s,i){
     var playing=state.currentSong&&state.currentSong.id===s.id&&state.currentSong.source===s.source;
-    var bg=playing?'background:var(--accent-bg)':'';
-    html+='<tr class="track-row" data-index="'+i+'" data-type="'+listType+'" style="cursor:pointer;border-bottom:1px solid var(--border);'+bg+'" onmouseover="this.style.background=\'var(--hover)\'" onmouseout="this.style.background=\''+(playing?'var(--accent-bg)':'')+'\'">';
-    html+='<td style="padding:10px 12px;font-size:12px;color:var(--text3);'+(playing?'color:var(--accent)':'')+'">'+(playing?'▶':i+1)+'</td>';
-    html+='<td style="padding:10px 0"><div style="font-size:14px;font-weight:500;'+(playing?'color:var(--accent)':'')+'">'+escapeHtml(s.title)+'</div><div style="font-size:12px;color:var(--text2);margin-top:2px">'+escapeHtml(s.artist)+'</div></td>';
-    html+='<td style="padding:10px 12px"><span class="source-tag">'+SOURCE_LABELS[s.source]+'</span></td>';
-    html+='<td style="padding:10px 12px;text-align:right;font-size:12px;color:var(--text3)">'+(s.duration?formatTime(s.duration):'')+'</td>';
-    html+='</tr>';
+    var bg=playing?'background:var(--accent-bg);border-radius:8px;':'';
+    var numColor=playing?'color:var(--accent);font-weight:700':'color:var(--text3)';
+    var titleWeight=playing?'font-weight:700;color:var(--accent)':'font-weight:500';
+    html+='<div class="track-row" data-index="'+i+'" data-type="'+listType+'" style="display:grid;grid-template-columns:40px 1fr 80px 60px;padding:12px 16px;cursor:pointer;align-items:center;transition:background .15s;'+bg+'" onmouseover="if(!this.style.background||this.style.background===\'\')this.style.background=\'var(--hover)\'" onmouseout="this.style.background=\''+(playing?'var(--accent-bg)':'')+'\'">';
+    html+='<span style="font-size:13px;'+numColor+';text-align:center">'+(playing?'<svg viewBox="0 0 24 24" fill="var(--accent)" width="14" height="14"><path d="M8 5v14l11-7z"/></svg>':i+1)+'</span>';
+    html+='<div style="min-width:0"><div style="font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;'+titleWeight+'">'+escapeHtml(s.title)+'</div><div style="font-size:12px;color:var(--text2);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+escapeHtml(s.artist)+'</div></div>';
+    html+='<span><span class="source-tag">'+SOURCE_LABELS[s.source]+'</span></span>';
+    html+='<span style="text-align:right;font-size:12px;color:var(--text3);font-variant-numeric:tabular-nums">'+(s.duration?formatTime(s.duration):'')+'</span>';
+    html+='</div>';
   });
-  html+='</tbody></table>';
+  html+='</div>';
   c.innerHTML=html;
   c.className="track-list";
-  // bind click on rows
   c.querySelectorAll(".track-row").forEach(function(el){
     el.addEventListener("click",function(){
       var idx=parseInt(el.dataset.index),type=el.dataset.type;
