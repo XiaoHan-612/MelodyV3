@@ -74,6 +74,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 .source-tag.ne{background:rgba(255,71,87,.1);color:#FF4757}
 .source-tag.bl{background:rgba(0,210,211,.1);color:#00D2D3}
 .tr-dur{text-align:right;font-size:12px;color:var(--text3);font-variant-numeric:tabular-nums}
+.tr-actions{display:flex;gap:4px;opacity:0;transition:opacity .2s}
+.track-row:hover .tr-actions{opacity:1}
+.tr-action-btn{width:26px;height:26px;border:none;border-radius:6px;background:transparent;color:var(--text3);cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.tr-action-btn:hover{background:var(--hover);color:var(--text)}
+.tr-action-btn.danger:hover{background:rgba(231,76,60,.1);color:#e74c3c}
 .empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:14px;color:var(--text3)}
 .empty-state svg{width:56px;height:56px;opacity:.15;animation:floatIcon 3s ease-in-out infinite}
 @keyframes floatIcon{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
@@ -295,6 +300,9 @@ function playSong(song,idx,type){
   else{cv.style.display="none";ph.style.display="flex";resetAccent()}
   document.querySelectorAll(".track-row").forEach(function(el){el.classList.toggle("playing",el.dataset.index==idx&&el.dataset.type==type)});
   toast("正在加载...");
+  // Also re-render current tab to update playing indicator
+  if(S.tab==="playlist")renderList(S.pl,"playlist");
+  else if(S.tab==="recent")renderList(S.recent,"recent");
   fallback(song,function(e,u){
     if(e||!u){toast("获取播放链接失败");return}
     var go=function(){audio.src="/audio-proxy/?url="+encodeURIComponent(u);audio.playbackRate=S.speed;initWave();audio.play().then(function(){S.play=true;updatePlayBtn();fadeIn();toast("正在播放: "+song.title);addRecent(song);loadLyric(song)}).catch(function(er){toast("播放失败")})};
@@ -333,10 +341,12 @@ function loadPl(){api("/api/playlist",function(e,d){if(e)return;S.pl=d||[];$("pl
 function savePl(){postApi("/api/playlist",S.pl,function(e){if(e)toast("保存失败")})}
 function addToPl(song){if(S.pl.some(function(s){return s.id===song.id&&s.source===song.source})){toast("已在歌单中");return}S.pl.push(song);savePl();$("playlistCount").textContent=S.pl.length;toast("已添加到歌单")}
 function rmFromPl(i){S.pl.splice(i,1);savePl();$("playlistCount").textContent=S.pl.length;if(S.tab==="playlist")renderList(S.pl,"playlist");toast("已移除")}
+function movePlUp(i){if(i<=0)return;var t=S.pl[i];S.pl[i]=S.pl[i-1];S.pl[i-1]=t;savePl();renderList(S.pl,"playlist")}
+function movePlDown(i){if(i>=S.pl.length-1)return;var t=S.pl[i];S.pl[i]=S.pl[i+1];S.pl[i+1]=t;savePl();renderList(S.pl,"playlist")}
 function addRecent(song){S.recent=S.recent.filter(function(s){return!(s.id===song.id&&s.source===song.source)});S.recent.unshift(song);if(S.recent.length>50)S.recent=S.recent.slice(0,50);if(S.tab==="recent")renderList(S.recent,"recent")}
 
 // Render
-function renderList(songs,type){var c=$("trackList");if(!songs||!songs.length){showEmpty();return}var h="";songs.forEach(function(s,i){var playing=S.song&&S.song.id===s.id&&S.song.source===s.source;h+='<div class="track-row'+(playing?' playing':'')+'" data-index="'+i+'" data-type="'+type+'">';h+='<div class="tr-num">'+(playing?'<svg viewBox="0 0 24 24" fill="var(--accent)" width="14" height="14"><path d="M8 5v14l11-7z"/></svg>':i+1)+'</div>';h+='<div><div class="tr-title">'+esc(s.title)+'</div><div class="tr-artist">'+esc(s.artist)+'</div></div>';h+='<span class="source-tag">'+SOURCE_LABELS[s.source]+'</span>';h+='<div class="tr-dur">'+(s.duration?fmt(s.duration):'')+'</div></div>'});c.innerHTML=h;c.querySelectorAll(".track-row").forEach(function(el){el.addEventListener("click",function(){var idx=parseInt(el.dataset.index),type=el.dataset.type;var list=type==="search"?S.results:type==="playlist"?S.pl:S.recent;if(list[idx])playSong(list[idx],idx,type)})})}
+function renderList(songs,type){var c=$("trackList");if(!songs||!songs.length){showEmpty();return}var h="";songs.forEach(function(s,i){var playing=S.song&&S.song.id===s.id&&S.song.source===s.source;h+='<div class="track-row'+(playing?' playing':'')+'" data-index="'+i+'" data-type="'+type+'">';h+='<div class="tr-num">'+(playing?'<svg viewBox="0 0 24 24" fill="var(--accent)" width="14" height="14"><path d="M8 5v14l11-7z"/></svg>':i+1)+'</div>';h+='<div class="tr-info"><div class="tr-title">'+esc(s.title)+'</div><div class="tr-artist">'+esc(s.artist)+'</div></div>';h+='<span class="source-tag '+s.source+'">'+SOURCE_LABELS[s.source]+'</span>';h+='<div class="tr-dur">'+(s.duration?fmt(s.duration):'')+'</div>';if(type==="playlist"){h+='<div class="tr-actions"><button class="tr-action-btn" data-act="up" data-idx="'+i+'" title="上移">↑</button><button class="tr-action-btn" data-act="down" data-idx="'+i+'" title="下移">↓</button><button class="tr-action-btn danger" data-act="del" data-idx="'+i+'" title="删除">✕</button></div>'}h+='</div>'});c.innerHTML=h;c.querySelectorAll(".track-row").forEach(function(el){el.addEventListener("click",function(e){if(e.target.closest(".tr-actions"))return;var idx=parseInt(el.dataset.index),type=el.dataset.type;var list=type==="search"?S.results:type==="playlist"?S.pl:S.recent;if(list[idx])playSong(list[idx],idx,type)})});c.querySelectorAll(".tr-action-btn").forEach(function(btn){btn.addEventListener("click",function(e){e.stopPropagation();var act=btn.dataset.act,idx=parseInt(btn.dataset.idx);if(act==="up")movePlUp(idx);else if(act==="down")movePlDown(idx);else if(act==="del")rmFromPl(idx)})})}
 function showEmpty(){$("trackList").innerHTML='<div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg><div class="text">搜索你喜欢的音乐</div><div style="font-size:13px;opacity:.7">支持酷狗、网易云、B站三个平台</div></div>'}
 function showLoading(){$("trackList").innerHTML='<div class="loading"><div class="spinner"></div><span>搜索中...</span></div>'}
 function updatePlayBtn(){var ic=$("playIcon"),b=$("btnPlay"),fi=$("ilPlayIcon"),fb=$("ilPlayBtn");if(S.play){ic.innerHTML=ICON_PAUSE;b.classList.add("playing");if(fi)fi.innerHTML=ICON_PAUSE;if(fb)fb.classList.add("playing")}else{ic.innerHTML=ICON_PLAY;b.classList.remove("playing");if(fi)fi.innerHTML=ICON_PLAY;if(fb)fb.classList.remove("playing")}}
@@ -555,7 +565,7 @@ function init(){
   $("btnMode").innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">'+MODE_ICONS[S.mode]+'</svg>'
 }
 
-window.App={toggle:togglePlay,prev:playPrev,next:playNext,skip:skip,cycleMode:cycleMode,setSpeed:setSpeed,toggleSpeedMenu:toggleSpeed,toggleMute:toggleMute,toggleLyricPanel:toggleLyricPanel,openLyrics:openLyrics,closeLyrics:closeLyrics,toggleTranslation:toggleTrans,adjustLyricOffset:adjustOff,toggleTheme:toggleTheme,searchHist:function(k){$("searchInput").value=k;search(k)},clearHist:function(){localStorage.removeItem("melody_sh");renderHist()},addToPlaylist:function(i){var l=curList();if(l[i])addToPl(l[i])},removeFromPlaylist:rmFromPl,minimize:function(){window.chrome&&window.chrome.webview&&window.chrome.webview.postMessage({action:"minimize"})},maximize:function(){window.chrome&&window.chrome.webview&&window.chrome.webview.postMessage({action:"maximize"})},close:function(){window.chrome&&window.chrome.webview&&window.chrome.webview.postMessage({action:"close"})}};
+window.App={toggle:togglePlay,prev:playPrev,next:playNext,skip:skip,cycleMode:cycleMode,setSpeed:setSpeed,toggleSpeedMenu:toggleSpeed,toggleMute:toggleMute,toggleLyricPanel:toggleLyricPanel,openLyrics:openLyrics,closeLyrics:closeLyrics,toggleTranslation:toggleTrans,adjustLyricOffset:adjustOff,toggleTheme:toggleTheme,searchHist:function(k){$("searchInput").value=k;search(k)},clearHist:function(){localStorage.removeItem("melody_sh");renderHist()},addToPlaylist:function(i){var l=curList();if(l[i])addToPl(l[i])},removeFromPlaylist:rmFromPl,minimize:function(){window.titlebarAction&&titlebarAction("minimize")},maximize:function(){window.titlebarAction&&titlebarAction("maximize")},close:function(){window.titlebarAction&&titlebarAction("close")}};
 init();
 </script>
 </body>

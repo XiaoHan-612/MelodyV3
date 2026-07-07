@@ -99,21 +99,56 @@ func main() {
 		time.Sleep(200 * time.Millisecond)
 	}
 
-	// 打开 webview 窗口
+	// 打开 webview 窗口（无边框，使用自定义标题栏）
 	w := webview2.New(debug)
 	defer w.Destroy()
 
 	w.SetTitle("MelodyV3")
-	// 用纳秒时间戳+随机数确保每次启动URL唯一，强制WebView2加载最新HTML
 	w.Navigate(addr + "?v=" + fmt.Sprintf("%d_%d", time.Now().UnixNano(), time.Now().Unix()%1000))
 
-	// 最大化窗口
+	// 设置窗口为无边框（去掉 Windows 默认标题栏）
 	hwnd := w.Window()
 	if hwnd != nil {
 		user32 := syscall.NewLazyDLL("user32.dll")
+		getWindowLong := user32.NewProc("GetWindowLongW")
+		setWindowLong := user32.NewProc("SetWindowLongW")
+		setWindowPos := user32.NewProc("SetWindowPos")
+
+		style, _, _ := getWindowLong.Call(uintptr(hwnd), uintptr(0xFFFFFFFFFFFFFFF0)) // GWL_STYLE = -16
+		style &^= 0x00C00000 // WS_CAPTION
+		style &^= 0x00040000 // WS_THICKFRAME
+		setWindowLong.Call(uintptr(hwnd), uintptr(0xFFFFFFFFFFFFFFF0), style)
+		setWindowPos.Call(uintptr(hwnd), 0, 0, 0, 0, 0,
+			0x0020|0x0002|0x0001|0x0004) // SWP_FRAMECHANGED|SWP_NOMOVE|SWP_NOSIZE|SWP_NOZORDER
+
+		// 最大化
 		showWindow := user32.NewProc("ShowWindow")
-		showWindow.Call(uintptr(hwnd), 3) // SW_MAXIMIZE = 3
+		showWindow.Call(uintptr(hwnd), 3) // SW_MAXIMIZE
 	}
+
+	// 处理自定义标题栏的消息（最小化/最大化/关闭）
+	w.Bind("titlebarAction", func(action string) string {
+		if hwnd == nil {
+			return "error"
+		}
+		user32 := syscall.NewLazyDLL("user32.dll")
+		switch action {
+		case "minimize":
+			showWindow := user32.NewProc("ShowWindow")
+			showWindow.Call(uintptr(hwnd), 6) // SW_MINIMIZE
+		case "maximize":
+			showWindow := user32.NewProc("ShowWindow")
+			isZoomed, _, _ := user32.NewProc("IsZoomed").Call(uintptr(hwnd))
+			if isZoomed != 0 {
+				showWindow.Call(uintptr(hwnd), 9) // SW_RESTORE
+			} else {
+				showWindow.Call(uintptr(hwnd), 3) // SW_MAXIMIZE
+			}
+		case "close":
+			w.Destroy()
+		}
+		return "ok"
+	})
 
 	w.Run()
 }
