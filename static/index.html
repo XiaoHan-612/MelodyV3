@@ -137,20 +137,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 .il-action-btn:hover{background:rgba(255,255,255,.12);color:#fff}
 .il-action-btn.active{background:var(--accent);color:#fff}
 
-.il-body{position:relative;z-index:2;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:0 5%}
+.il-body{position:relative;z-index:2;flex:1;display:flex;align-items:center;justify-content:center}
 .il-canvas{position:absolute;inset:0;pointer-events:none;z-index:1}
-.il-lyric-line{
-  font-size:clamp(34px,5.6vw,76px);font-weight:700;line-height:1.3;
-  background:linear-gradient(180deg,#f6fdff 0%,#a8f6ff 55%,#7ecbff 100%);
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
-  filter:drop-shadow(0 4px 22px rgba(143,233,255,.3));
-  max-width:85%;margin:0 auto;
-  opacity:0;transform:translateY(20px) scale(.95);
-  transition:opacity .6s cubic-bezier(.16,1,.3,1),transform .6s cubic-bezier(.16,1,.3,1);
-}
-.il-lyric-line.visible{opacity:1;transform:translateY(0) scale(1)}
-.il-translation{font-size:clamp(16px,2.5vw,24px);color:rgba(255,255,255,.4);margin-top:12px;font-weight:400;opacity:0;transition:opacity .5s .2s}
-.il-translation.visible{opacity:1}
 .il-next{position:absolute;bottom:15%;left:50%;transform:translateX(-50%);font-size:16px;color:rgba(255,255,255,.15);max-width:70%;text-align:center}
 
 .il-controls{position:relative;z-index:3;flex-shrink:0;padding:12px 10% 28px;display:flex;flex-direction:column;align-items:center;gap:12px}
@@ -204,9 +192,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
   <div class="il-bg" id="ilBg"></div>
   <div class="il-header"><button class="il-back" onclick="App.closeLyrics()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg></button><div class="il-song-info"><div class="il-title" id="ilTitle">--</div><div class="il-artist" id="ilArtist">--</div></div><div class="il-actions"><button class="il-action-btn" id="ilTransBtn" onclick="App.toggleTranslation()">译</button><button class="il-action-btn" onclick="App.adjustLyricOffset(-0.5)">-0.5s</button><button class="il-action-btn" onclick="App.adjustLyricOffset(0.5)">+0.5s</button></div></div>
   <div class="il-body" id="ilBody">
-    <div class="il-lyric-line" id="ilText" style="opacity:0">等待播放...</div>
-    <div class="il-translation" id="ilTrans" style="display:none"></div>
-    <div class="il-next" id="ilNext"></div>
+    <canvas class="il-canvas" id="ilCanvas"></canvas>
   </div>
   <div class="il-controls"><div class="il-progress" id="ilProgress"><div class="il-progress-fill" id="ilProgressFill"></div></div><div class="il-btns"><button class="ctrl-btn" onclick="App.prev()"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6 8.5 6V6z"/></svg></button><button class="play-btn" id="ilPlayBtn" onclick="App.toggle()"><svg viewBox="0 0 24 24" fill="currentColor" id="ilPlayIcon"><path d="M8 5v14l11-7z"/></svg></button><button class="ctrl-btn" onclick="App.next()"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg></button></div></div>
 </div>
@@ -307,7 +293,7 @@ function renderLrc(){var b=$("lyricBody");if(!S.lines.length){showLrcEmpty();ret
 function findTr(time){var best=null,bd=Infinity;for(var i=0;i<transLines.length;i++){var d=Math.abs(transLines[i].time-time);if(d<bd&&d<1){bd=d;best=transLines[i].text}}return best}
 function showLrcEmpty(){$("lyricBody").innerHTML='<div class="lyric-empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 6h16M4 12h12M4 18h8"/></svg><span>暂无歌词</span></div>'}
 function updateLrc(time){var adj=time-S.lyricOff,idx=-1;for(var i=0;i<S.lines.length;i++){if(S.lines[i].time<=adj)idx=i;else break}if(idx===S.lyricIdx)return;S.lyricIdx=idx;document.querySelectorAll("#lyricBody .lyric-line").forEach(function(el,i){el.classList.toggle("active",i===idx)});if(idx>=0){var el=document.querySelector("#lyricBody .lyric-line[data-index='"+idx+"']");if(el)el.scrollIntoView({behavior:"smooth",block:"center"})}renderIL()}
-function renderIL(){var cl=$("ilText"),tl=$("ilTitle"),al=$("ilArtist"),tr=$("ilTrans"),nx=$("ilNext");if(S.song){tl.textContent=S.song.title;al.textContent=S.song.artist}if(S.lyricIdx>=0&&S.lines[S.lyricIdx]){cl.textContent=S.lines[S.lyricIdx].text;cl.classList.remove("visible");void cl.offsetWidth;cl.classList.add("visible");if(showTrans&&transLines.length){var tt=findTr(S.lines[S.lyricIdx].time);if(tr&&tt){tr.textContent=tt;tr.classList.add("visible")}else if(tr){tr.classList.remove("visible")}}else if(tr){tr.classList.remove("visible")}var ni=S.lyricIdx+1;if(nx)nx.textContent=(ni<S.lines.length)?S.lines[ni].text:""}else if(cl){cl.textContent="等待播放...";cl.classList.remove("visible");if(tr)tr.classList.remove("visible");if(nx)nx.textContent=""}}
+function renderIL(){var tl=$("ilTitle"),al=$("ilArtist");if(S.song){tl.textContent=S.song.title;al.textContent=S.song.artist}}
 function toggleTrans(){showTrans=!showTrans;renderLrc();var b=$("btnTranslation"),bf=$("ilTransBtn");if(b)b.style.color=showTrans?"var(--accent)":"";if(bf)bf.classList.toggle("active",showTrans);toast(showTrans?"显示翻译":"隐藏翻译")}
 function adjustOff(d){S.lyricOff+=d;var ds=$("lyricOffsetDisplay");if(ds)ds.textContent=S.lyricOff.toFixed(1)+"s";toast("歌词偏移: "+S.lyricOff.toFixed(1)+"s")}
 
@@ -337,56 +323,126 @@ var ilCtx,ilCv;
 function initIL(){ilCv=$("ilCanvas");if(ilCv)ilCtx=ilCv.getContext("2d")}
 function drawIL(){
   if(!ilCtx||!S.lyricsOpen)return;
-  var w=ilCv.width=ilCv.parentElement.clientWidth,h=ilCv.height=ilCv.parentElement.clientHeight;
+  var w=ilCv.width=ilCv.parentElement.clientWidth;
+  var h=ilCv.height=ilCv.parentElement.clientHeight;
   if(w<10||h<10)return;
   var ctx=ilCtx;
+  var t=Date.now()*.001;
   ctx.clearRect(0,0,w,h);
-  if(!S.lines.length||S.lyricIdx<0)return;
-  // Draw background lyrics (previous/next, blurred, scattered)
-  for(var i=Math.max(0,S.lyricIdx-3);i<S.lyricIdx;i++){
-    var line=S.lines[i];
-    var opacity=(S.lyricIdx-i)*0.12;
-    var yPos=h*0.12+((S.lyricIdx-1-i)*h*0.09);
-    drawBgLine(ctx,line.text,w/2,yPos,w*0.55,opacity);
+
+  // 1. Background gradient
+  var g=ctx.createRadialGradient(w/2,h*.4,0,w/2,h*.4,Math.max(w,h)*.6);
+  g.addColorStop(0,"rgba(10,20,45,.4)");g.addColorStop(1,"rgba(6,10,20,.1)");
+  ctx.fillStyle=g;ctx.fillRect(0,0,w,h);
+
+  if(!S.lines.length)return;
+
+  // 2. Background lyrics (scattered like stars, blurred, twinkling)
+  var allLines=S.lines;
+  var ci=S.lyricIdx;
+  for(var i=0;i<allLines.length;i++){
+    if(Math.abs(i-ci)<2)continue; // skip near current
+    // Position: pseudo-random but stable per line
+    var seed=i*7919;
+    var px=(Math.sin(seed)*0.4+0.5)*w;
+    var py=(Math.cos(seed*1.3)*0.35+0.5)*h;
+    // Distance from current: fade out
+    var dist=Math.abs(i-ci);
+    var maxDist=Math.min(allLines.length,8);
+    var fade=Math.max(0,1-dist/maxDist);
+    // Twinkle
+    var twinkle=0.5+Math.sin(t*1.5+seed)*0.3;
+    var alpha=fade*0.18*twinkle;
+    if(alpha<0.02)continue;
+    var fs=Math.min(20,Math.max(12,w/(allLines[i].text.length*0.9)));
+    ctx.save();
+    ctx.font="400 "+fs+"px -apple-system,'PingFang SC',sans-serif";
+    ctx.textAlign="center";ctx.textBaseline="middle";
+    ctx.globalAlpha=alpha;
+    ctx.fillStyle="rgba(143,233,255,0.6)";
+    ctx.filter="blur(2px)";
+    ctx.fillText(allLines[i].text,px,py);
+    ctx.restore();
   }
-  for(var i=S.lyricIdx+1;i<Math.min(S.lines.length,S.lyricIdx+4);i++){
-    var line=S.lines[i];
-    var opacity=(i-S.lyricIdx)*0.12;
-    var yPos=h*0.62+((i-S.lyricIdx-1)*h*0.09);
-    drawBgLine(ctx,line.text,w/2,yPos,w*0.45,opacity);
+
+  // 3. Decorative sparkles
+  for(var i=0;i<15;i++){
+    var seed=i*3571;
+    var sx=(Math.sin(seed+t*0.3)*0.45+0.5)*w;
+    var sy=(Math.cos(seed*1.7+t*0.2)*0.4+0.5)*h;
+    var sa=0.1+Math.sin(t*2+seed)*0.08;
+    var sr=1+Math.sin(t*1.5+seed)*0.5;
+    ctx.beginPath();ctx.arc(sx,sy,sr,0,6.28);
+    ctx.fillStyle="rgba(143,233,255,"+sa+")";ctx.fill();
   }
-  // Active lyric with per-character highlight
-  var curLine=S.lines[S.lyricIdx];
+
+  // 4. Active lyric (centered, per-char highlight)
+  if(ci<0||ci>=allLines.length)return;
+  var curLine=allLines[ci];
   var lineStart=curLine.time;
-  var nextLine=S.lines[S.lyricIdx+1];
+  var nextLine=allLines[ci+1];
   var lineEnd=nextLine?nextLine.time:(audio.duration||lineStart+5);
   var lineDur=lineEnd-lineStart;
-  var charProgress=0;
-  if(lineDur>0)charProgress=Math.max(0,Math.min(1,(audio.currentTime-S.lyricOff-lineStart)/lineDur));
-  drawActiveLine(ctx,curLine.text,w/2,h*0.4,w*0.85,charProgress);
-}
-function drawBgLine(ctx,text,cx,cy,maxW,opacity){
-  var fs=Math.min(26,Math.max(14,maxW/(text.length*0.8)));
-  ctx.save();ctx.font="400 "+fs+"px -apple-system,'PingFang SC',sans-serif";
+  var charProg=0;
+  if(lineDur>0)charProg=Math.max(0,Math.min(1,(audio.currentTime-S.lyricOff-lineStart)/lineDur));
+
+  // Draw active lyric text with per-character coloring
+  var text=curLine.text;
+  var fontSize=Math.min(72,Math.max(30,w/(text.length*0.65)));
+  ctx.save();
+  ctx.font="700 "+fontSize+"px -apple-system,'PingFang SC',sans-serif";
   ctx.textAlign="center";ctx.textBaseline="middle";
-  ctx.globalAlpha=Math.max(0,0.3-opacity*0.25);
-  ctx.fillStyle="rgba(168,246,255,0.4)";
-  ctx.filter="blur(2px)";ctx.fillText(text,cx,cy);ctx.restore();
-}
-function drawActiveLine(ctx,text,cx,cy,maxW,progress){
-  var fs=Math.min(76,Math.max(34,maxW/(text.length*0.7)));
-  ctx.save();ctx.font="700 "+fs+"px -apple-system,'PingFang SC',sans-serif";
-  ctx.textAlign="center";ctx.textBaseline="middle";
-  var chars=text.split("");var cw=[];var tw=0;
-  for(var i=0;i<chars.length;i++){var w2=ctx.measureText(chars[i]).width;cw.push(w2);tw+=w2}
-  var sx=cx-tw/2;var ci=Math.floor(progress*chars.length);var x=sx;
+
+  var chars=text.split("");
+  var widths=[];var totalW=0;
+  for(var i=0;i<chars.length;i++){var cw=ctx.measureText(chars[i]).width;widths.push(cw);totalW+=cw}
+  var startX=(w-totalW)/2;
+  var charIdx=Math.floor(charProg*chars.length);
+  var x=startX;
+
   for(var i=0;i<chars.length;i++){
-    var lit=i<=ci;ctx.save();
-    if(lit){ctx.fillStyle="#f6fdff";ctx.shadowColor="rgba(10,132,255,.8)";ctx.shadowBlur=20;ctx.font="700 "+(fs*1.02)+"px -apple-system,'PingFang SC',sans-serif"}
-    else{ctx.fillStyle="rgba(168,246,255,.2)";ctx.shadowBlur=0}
-    ctx.fillText(chars[i],x+cw[i]/2,cy);ctx.restore();x+=cw[i];
+    var played=i<=charIdx;
+    ctx.save();
+    if(played){
+      // Played: bright with blue glow
+      ctx.fillStyle="#f0faff";
+      ctx.shadowColor="rgba(10,132,255,.9)";
+      ctx.shadowBlur=25;
+    }else{
+      // Not played: dim
+      ctx.fillStyle="rgba(168,246,255,.18)";
+      ctx.shadowBlur=0;
+    }
+    ctx.fillText(chars[i],x+widths[i]/2,h*.42);
+    ctx.restore();
+    x+=widths[i];
   }
   ctx.restore();
+
+  // 5. Translation below
+  if(showTrans&&transLines.length&&ci>=0){
+    var trText=findTr(curLine.time);
+    if(trText){
+      var trFs=Math.min(24,Math.max(14,w/(trText.length*0.7)));
+      ctx.save();ctx.font="400 "+trFs+"px -apple-system,'PingFang SC',sans-serif";
+      ctx.textAlign="center";ctx.textBaseline="middle";
+      ctx.fillStyle="rgba(255,255,255,.35)";
+      ctx.fillText(trText,w/2,h*.42+fontSize*.8);
+      ctx.restore();
+    }
+  }
+
+  // 6. Next line preview
+  if(ci+1<allLines.length){
+    var nx=allLines[ci+1];
+    var nxFs=Math.min(18,Math.max(12,w/(nx.text.length*0.8)));
+    ctx.save();ctx.font="400 "+nxFs+"px -apple-system,'PingFang SC',sans-serif";
+    ctx.textAlign="center";ctx.textBaseline="middle";
+    ctx.globalAlpha=0.15;
+    ctx.fillStyle="rgba(168,246,255,0.5)";
+    ctx.fillText(nx.text,w/2,h*.78);
+    ctx.restore();
+  }
 }
 
 // Controls
