@@ -16,6 +16,15 @@
   --glass-shadow:inset 0 0 2px 1px rgba(255,255,255,.2),inset 0 0 8px 3px rgba(255,255,255,.06),0 16px 48px rgba(0,0,0,.35);
   --spring:cubic-bezier(.16,1,.3,1); --bounce:cubic-bezier(.34,1.56,.64,1); --smooth:cubic-bezier(.25,.1,.25,1);
 }
+[data-theme="light"] {
+  --bg:#F5F5F7; --paper:#FFFFFF; --card:#FFFFFF;
+  --accent:#007AFF; --accent-rgb:0,122,255; --accent2:#409CFF;
+  --text:#1D1D1F; --text2:rgba(0,0,0,.5); --text3:rgba(0,0,0,.28);
+  --border:rgba(0,0,0,.06); --hover:rgba(0,0,0,.04);
+  --glass-bg:linear-gradient(135deg,rgba(255,255,255,.82),rgba(245,245,247,.78));
+  --glass-border:rgba(0,122,255,.15);
+  --glass-shadow:inset 0 0 2px 1px rgba(255,255,255,.5),inset 0 0 8px 3px rgba(255,255,255,.15),0 16px 48px rgba(0,0,0,.08);
+}
 *{margin:0;padding:0;box-sizing:border-box}
 html,body{height:100%;overflow:hidden}
 body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text);font-size:13px;-webkit-font-smoothing:antialiased;display:flex;flex-direction:column;user-select:none}
@@ -105,10 +114,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 .lyric-line .translation{font-size:12px;color:var(--text2);margin-top:2px}
 .lyric-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:12px;color:var(--text3)}
 .lyric-empty svg{width:40px;height:40px;opacity:.15}
-.immersive-lyrics{position:fixed;inset:0;z-index:1000;display:none;flex-direction:column;background:linear-gradient(180deg,#080C18 0%,#0A1020 50%,#080C18 100%);color:#fff;overflow:hidden}
+.immersive-lyrics{position:fixed;inset:0;z-index:1000;display:none;flex-direction:column;background:#08090B;color:#fff;overflow:hidden}
 .immersive-lyrics.show{display:flex}
-.il-bg{position:absolute;inset:-100px;background-size:cover;background-position:center;filter:blur(120px) saturate(1.5) brightness(.15);transform:scale(1.4);opacity:.45}
-.il-bg::after{content:"";position:absolute;inset:0;background:radial-gradient(ellipse at 50% 50%,rgba(0,0,0,.2),rgba(0,0,0,.7))}
+.il-bg{position:absolute;inset:-80px;background-size:cover;background-position:center;filter:blur(100px) saturate(1.4) brightness(.18);transform:scale(1.3);opacity:.6}
+.il-bg::before{content:"";position:absolute;inset:0;background:radial-gradient(ellipse at 50% 40%,rgba(0,122,255,.08) 0%,transparent 60%)}
+.il-bg::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.3) 0%,rgba(0,0,0,.55) 40%,rgba(0,0,0,.8) 100%)}
 .il-header{position:relative;z-index:3;display:flex;align-items:center;justify-content:space-between;padding:20px 32px;flex-shrink:0}
 .il-back{width:36px;height:36px;border-radius:50%;border:none;background:rgba(255,255,255,.06);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s var(--smooth)}
 .il-back:hover{background:rgba(255,255,255,.12)}
@@ -120,8 +130,29 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 .il-action-btn{padding:5px 10px;border-radius:16px;border:none;background:rgba(255,255,255,.06);color:rgba(255,255,255,.5);font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .2s var(--smooth)}
 .il-action-btn:hover{background:rgba(255,255,255,.12);color:#fff}
 .il-action-btn.active{background:var(--accent);color:#fff}
+
+/* Mineradio 风格歌词文字 */
 .il-body{position:relative;z-index:2;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:0 8%}
 .il-canvas{position:absolute;inset:0;pointer-events:none;z-index:1}
+.il-lyric-line{
+  font-size:clamp(34px,5.6vw,76px);font-weight:700;line-height:1.3;
+  background:linear-gradient(180deg,#f6fdff 0%,#a8f6ff 55%,#7ecbff 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  filter:drop-shadow(0 4px 22px rgba(143,233,255,.3));
+  animation:lyricIn .9s cubic-bezier(.16,.84,.32,1.02) both;
+  max-width:85%;margin:0 auto;
+}
+@keyframes lyricIn{
+  0%{opacity:0;transform:perspective(800px) translateZ(-40px) rotateX(8deg);filter:blur(12px) drop-shadow(0 4px 22px rgba(143,233,255,0))}
+  100%{opacity:1;transform:perspective(800px) translateZ(0) rotateX(0);filter:drop-shadow(0 4px 22px rgba(143,233,255,.3))}
+}
+@keyframes lyricOut{
+  0%{opacity:1;transform:perspective(800px) translateZ(0) rotateX(0)}
+  100%{opacity:0;transform:perspective(800px) translateZ(30px) rotateX(-5deg);filter:blur(8px)}
+}
+.il-translation{font-size:clamp(16px,2.5vw,24px);color:rgba(255,255,255,.4);margin-top:12px;font-weight:400}
+.il-next{position:absolute;bottom:15%;left:50%;transform:translateX(-50%);font-size:16px;color:rgba(255,255,255,.15);max-width:70%;text-align:center}
+
 .il-controls{position:relative;z-index:3;flex-shrink:0;padding:12px 10% 28px;display:flex;flex-direction:column;align-items:center;gap:12px}
 .il-progress{width:100%;height:3px;background:rgba(255,255,255,.06);cursor:pointer;position:relative;border-radius:2px;transition:height .2s}
 .il-progress:hover{height:5px}
@@ -172,7 +203,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
   <canvas class="il-canvas" id="ilCanvas"></canvas>
   <div class="il-bg" id="ilBg"></div>
   <div class="il-header"><button class="il-back" onclick="App.closeLyrics()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg></button><div class="il-song-info"><div class="il-title" id="ilTitle">--</div><div class="il-artist" id="ilArtist">--</div></div><div class="il-actions"><button class="il-action-btn" id="ilTransBtn" onclick="App.toggleTranslation()">译</button><button class="il-action-btn" onclick="App.adjustLyricOffset(-0.5)">-0.5s</button><button class="il-action-btn" onclick="App.adjustLyricOffset(0.5)">+0.5s</button></div></div>
-  <div class="il-body" id="ilBody"></div>
+  <div class="il-body" id="ilBody">
+    <div class="il-lyric-line" id="ilText" style="opacity:0">等待播放...</div>
+    <div class="il-translation" id="ilTrans" style="display:none"></div>
+    <div class="il-next" id="ilNext"></div>
+  </div>
   <div class="il-controls"><div class="il-progress" id="ilProgress"><div class="il-progress-fill" id="ilProgressFill"></div></div><div class="il-btns"><button class="ctrl-btn" onclick="App.prev()"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6 8.5 6V6z"/></svg></button><button class="play-btn" id="ilPlayBtn" onclick="App.toggle()"><svg viewBox="0 0 24 24" fill="currentColor" id="ilPlayIcon"><path d="M8 5v14l11-7z"/></svg></button><button class="ctrl-btn" onclick="App.next()"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg></button></div></div>
 </div>
 <canvas class="main-waveform" id="mainWaveform"></canvas>
@@ -271,7 +306,8 @@ function parseLrc(t){var ls=[],re=/\[(\d{2}):(\d{2})\.(\d{2,3})\](.*)/g,m;while(
 function renderLrc(){var b=$("lyricBody");if(!S.lines.length){showLrcEmpty();return}var h="";S.lines.forEach(function(l,i){h+='<div class="lyric-line" data-index="'+i+'"><span class="text">'+esc(l.text)+'</span>';if(showTrans&&transLines.length){var tr=findTr(l.time);if(tr)h+='<div class="translation">'+esc(tr)+'</div>'}h+='</div>'});b.innerHTML=h}
 function findTr(time){var best=null,bd=Infinity;for(var i=0;i<transLines.length;i++){var d=Math.abs(transLines[i].time-time);if(d<bd&&d<1){bd=d;best=transLines[i].text}}return best}
 function showLrcEmpty(){$("lyricBody").innerHTML='<div class="lyric-empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 6h16M4 12h12M4 18h8"/></svg><span>暂无歌词</span></div>'}
-function updateLrc(time){var adj=time-S.lyricOff,idx=-1;for(var i=0;i<S.lines.length;i++){if(S.lines[i].time<=adj)idx=i;else break}if(idx===S.lyricIdx)return;S.lyricIdx=idx;document.querySelectorAll("#lyricBody .lyric-line").forEach(function(el,i){el.classList.toggle("active",i===idx)});if(idx>=0){var el=document.querySelector("#lyricBody .lyric-line[data-index='"+idx+"']");if(el)el.scrollIntoView({behavior:"smooth",block:"center"})}}
+function updateLrc(time){var adj=time-S.lyricOff,idx=-1;for(var i=0;i<S.lines.length;i++){if(S.lines[i].time<=adj)idx=i;else break}if(idx===S.lyricIdx)return;S.lyricIdx=idx;document.querySelectorAll("#lyricBody .lyric-line").forEach(function(el,i){el.classList.toggle("active",i===idx)});if(idx>=0){var el=document.querySelector("#lyricBody .lyric-line[data-index='"+idx+"']");if(el)el.scrollIntoView({behavior:"smooth",block:"center"})}renderIL()}
+function renderIL(){var cl=$("ilText"),tl=$("ilTitle"),al=$("ilArtist"),tr=$("ilTrans"),nx=$("ilNext");if(S.song){tl.textContent=S.song.title;al.textContent=S.song.artist}if(S.lyricIdx>=0&&S.lines[S.lyricIdx]){cl.textContent=S.lines[S.lyricIdx].text;cl.style.animation="none";void cl.offsetWidth;cl.style.animation="lyricIn .9s cubic-bezier(.16,.84,.32,1.02) both";cl.style.opacity="1";if(showTrans&&transLines.length){var tt=findTr(S.lines[S.lyricIdx].time);if(tr&&tt){tr.textContent=tt;tr.style.display="block"}else if(tr){tr.style.display="none"}}else if(tr){tr.style.display="none"}var ni=S.lyricIdx+1;if(nx)nx.textContent=(ni<S.lines.length)?S.lines[ni].text:""}else if(cl){cl.textContent="等待播放...";cl.style.opacity=".3";if(tr)tr.style.display="none";if(nx)nx.textContent=""}}
 function toggleTrans(){showTrans=!showTrans;renderLrc();var b=$("btnTranslation"),bf=$("ilTransBtn");if(b)b.style.color=showTrans?"var(--accent)":"";if(bf)bf.classList.toggle("active",showTrans);toast(showTrans?"显示翻译":"隐藏翻译")}
 function adjustOff(d){S.lyricOff+=d;var ds=$("lyricOffsetDisplay");if(ds)ds.textContent=S.lyricOff.toFixed(1)+"s";toast("歌词偏移: "+S.lyricOff.toFixed(1)+"s")}
 
@@ -353,7 +389,7 @@ function getPct(e){var b=$("progressBar"),r=b.getBoundingClientRect();return Mat
 function seekTo(e){var p=getPct(e);if(audio.duration)audio.currentTime=p*audio.duration}
 
 // Lyrics fullscreen
-function openLyrics(){S.lyricsOpen=true;var il=$("immersiveLyrics");if(S.song){$("ilTitle").textContent=S.song.title;$("ilArtist").textContent=S.song.artist;var bg=$("ilBg");if(S.song.cover)bg.style.backgroundImage="url("+S.song.cover+")";else bg.style.backgroundImage="none"}il.classList.add("show");if(!ilCv)initIL();setTimeout(function(){if(ilCv){ilCv.width=ilCv.parentElement.clientWidth;ilCv.height=ilCv.parentElement.clientHeight}},100)}
+function openLyrics(){S.lyricsOpen=true;var il=$("immersiveLyrics");if(S.song){$("ilTitle").textContent=S.song.title;$("ilArtist").textContent=S.song.artist;var bg=$("ilBg");if(S.song.cover)bg.style.backgroundImage="url("+S.song.cover+")";else bg.style.backgroundImage="none"}renderIL();il.classList.add("show");if(!ilCv)initIL();setTimeout(function(){if(ilCv){ilCv.width=ilCv.parentElement.clientWidth;ilCv.height=ilCv.parentElement.clientHeight}},100)}
 function closeLyrics(){S.lyricsOpen=false;$("immersiveLyrics").classList.remove("show")}
 function toggleLyricPanel(){S.lyricVis=!S.lyricVis;$("lyricPanel").style.display=S.lyricVis?"flex":"none";var b=$("btnLyric");if(b)b.classList.toggle("active",S.lyricVis)}
 
