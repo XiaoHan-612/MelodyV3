@@ -242,6 +242,7 @@ func (s *Server) handlePlaylist(w http.ResponseWriter, r *http.Request) {
 		s.jsonResponse(w, http.StatusOK, playlist)
 
 	case "POST":
+		r.Body = http.MaxBytesReader(w, r.Body, 1<<20) // 1MB limit
 		body, err := io.ReadAll(r.Body)
 		if err != nil {
 			s.jsonResponse(w, http.StatusBadRequest, map[string]interface{}{
@@ -258,7 +259,13 @@ func (s *Server) handlePlaylist(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		savePlaylist(playlist)
+		if err := savePlaylist(playlist); err != nil {
+			s.jsonResponse(w, http.StatusInternalServerError, map[string]interface{}{
+				"error": "failed to save playlist: " + err.Error(),
+			})
+			return
+		}
+
 		s.jsonResponse(w, http.StatusOK, map[string]interface{}{
 			"success": true,
 		})

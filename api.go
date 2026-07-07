@@ -295,6 +295,10 @@ func (n *NeteaseSource) GetURL(id string) (string, error) {
 
 	body, _ := io.ReadAll(resp.Body)
 
+	if resp.StatusCode != 200 {
+		return "", fmt.Errorf("netease get url failed: %d", resp.StatusCode)
+	}
+
 	var result struct {
 		Data []struct {
 			URL string `json:"url"`
@@ -329,6 +333,10 @@ func (n *NeteaseSource) GetLyric(id string) (*Lyric, error) {
 	defer resp.Body.Close()
 
 	body, _ := io.ReadAll(resp.Body)
+
+	if resp.StatusCode != 200 {
+		return nil, fmt.Errorf("netease lyric failed: %d", resp.StatusCode)
+	}
 
 	var result struct {
 		LRC struct {
@@ -785,13 +793,21 @@ func migratePlaylistData(data []byte) []Song {
 
 	// 保存迁移后的数据
 	if len(playlist) > 0 {
-		savePlaylist(playlist)
+		_ = savePlaylist(playlist)
 	}
 
 	return playlist
 }
 
-func savePlaylist(playlist []Song) {
-	data, _ := json.MarshalIndent(playlist, "", "  ")
-	os.WriteFile(plFile(), data, 0644)
+func savePlaylist(playlist []Song) error {
+	data, err := json.MarshalIndent(playlist, "", "  ")
+	if err != nil {
+		fmt.Printf("savePlaylist marshal error: %v\n", err)
+		return err
+	}
+	if err := os.WriteFile(plFile(), data, 0644); err != nil {
+		fmt.Printf("savePlaylist write error: %v\n", err)
+		return err
+	}
+	return nil
 }

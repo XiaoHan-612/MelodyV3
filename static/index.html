@@ -21,6 +21,22 @@
   --r: 8px;
   --rL: 12px;
   --blur: 40px;
+  --transition: 0.35s cubic-bezier(.4,0,.2,1);
+}
+
+[data-theme="dark"] {
+  --bg: #0D0D0F;
+  --surface: rgba(30,30,32,.85);
+  --card: #1A1A1C;
+  --accent: #FA2D48;
+  --accent2: #FB5C6E;
+  --accent-bg: rgba(250,45,72,.12);
+  --accent-bg2: rgba(250,45,72,.2);
+  --text: #F0F0F2;
+  --text2: rgba(255,255,255,.55);
+  --text3: rgba(255,255,255,.3);
+  --border: rgba(255,255,255,.08);
+  --hover: rgba(255,255,255,.06);
 }
 
 * { margin:0; padding:0; box-sizing:border-box; }
@@ -35,6 +51,11 @@ body {
   display: flex;
   flex-direction: column;
   user-select: none;
+  transition: background var(--transition), color var(--transition);
+}
+
+*, *::before, *::after {
+  transition: background var(--transition), color var(--transition), border-color var(--transition), box-shadow var(--transition);
 }
 
 /* ═══════════════════════════════════════════════
@@ -1177,6 +1198,15 @@ body {
       </svg>
       B站
     </div>
+
+    <div style="flex:1"></div>
+    <div class="sb-label">设置</div>
+    <div class="nav-item" id="navTheme" onclick="App.toggleTheme()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+        <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+      </svg>
+      <span id="themeLabel">深色模式</span>
+    </div>
   </nav>
 
   <main class="content" id="mainContent">
@@ -1202,6 +1232,7 @@ body {
     <div class="lyric-head">
       <span>歌词</span>
       <div style="display:flex;gap:4px;align-items:center;">
+        <button class="ctrl-btn" onclick="App.toggleTranslation()" title="显示/隐藏翻译" style="font-size:10px;width:auto;padding:0 6px;" id="btnTranslation">译</button>
         <button class="ctrl-btn" onclick="App.adjustLyricOffset(-0.5)" title="歌词提前0.5秒" style="font-size:10px;width:auto;padding:0 6px;">-0.5s</button>
         <span id="lyricOffsetDisplay" style="font-size:10px;color:var(--text3);min-width:30px;text-align:center;">0s</span>
         <button class="ctrl-btn" onclick="App.adjustLyricOffset(0.5)" title="歌词延后0.5秒" style="font-size:10px;width:auto;padding:0 6px;">+0.5s</button>
@@ -1245,6 +1276,7 @@ body {
         </div>
       </div>
       <div style="display:flex;gap:8px;align-items:center;">
+        <button class="ctrl-btn" onclick="App.toggleTranslation()" title="显示/隐藏翻译" style="font-size:10px;width:auto;padding:0 6px;color:rgba(255,255,255,.6);" id="btnTranslationFs">译</button>
         <button class="ctrl-btn" onclick="App.adjustLyricOffset(-0.5)" title="歌词提前0.5秒" style="font-size:10px;width:auto;padding:0 6px;color:rgba(255,255,255,.6);">-0.5s</button>
         <span id="lyricFsOffsetDisplay" style="font-size:10px;color:rgba(255,255,255,.4);min-width:30px;text-align:center;">0s</span>
         <button class="ctrl-btn" onclick="App.adjustLyricOffset(0.5)" title="歌词延后0.5秒" style="font-size:10px;width:auto;padding:0 6px;color:rgba(255,255,255,.6);">+0.5s</button>
@@ -1340,6 +1372,18 @@ body {
       <button class="ctrl-btn lyric-toggle-btn active" id="btnLyric" onclick="App.toggleLyricPanel()" title="歌词">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
           <path d="M4 6h16M4 10h12M4 14h8M4 18h4"/>
+        </svg>
+      </button>
+      <button class="ctrl-btn" id="btnQueue" onclick="App.showPlayQueue()" title="播放队列">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/>
+          <line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>
+        </svg>
+      </button>
+      <button class="ctrl-btn" id="btnMini" onclick="App.toggleMiniMode()" title="迷你模式">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/>
+          <line x1="14" y1="10" x2="21" y2="3"/><line x1="3" y1="21" x2="10" y2="14"/>
         </svg>
       </button>
       <span class="speed-badge" id="speedBadge" onclick="App.toggleSpeedMenu()">1x</span>
@@ -1522,7 +1566,7 @@ function playSong(song, index, listType) {
   $("songName").textContent = song.title;
   $("songArtist").textContent = song.artist;
 
-  // 封面
+  // 封面 + 主题色提取
   if (song.cover) {
     $("coverImg").src = song.cover;
     $("coverImg").style.display = "block";
@@ -1530,9 +1574,11 @@ function playSong(song, index, listType) {
     $("coverImg").classList.remove("animate-in");
     void $("coverImg").offsetWidth;
     $("coverImg").classList.add("animate-in");
+    extractCoverColor(song.cover);
   } else {
     $("coverImg").style.display = "none";
     $("coverPlaceholder").style.display = "flex";
+    resetAccentColor();
   }
 
   // 高亮当前歌曲
@@ -1540,34 +1586,39 @@ function playSong(song, index, listType) {
     el.classList.toggle("playing", el.dataset.index == index && el.dataset.type == listType);
   });
 
-  // 获取播放链接
+  // 获取播放链接（带 fallback）
   toast("正在加载...");
-  api("/api/song/url?id=" + song.id + "&source=" + song.source, function(err, data) {
-    if (err || !data.url) {
+  getSongURLWithFallback(song, function(err, url, usedSource) {
+    if (err || !url) {
       toast("获取播放链接失败");
       return;
     }
 
-    // 所有音频走后端代理（解决跨域问题，支持Web Audio API）
-    audio.src = "/audio-proxy/?url=" + encodeURIComponent(data.url);
-    audio.playbackRate = state.speed;
-    initWaveform();
-    audio.play().then(function() {
-      state.isPlaying = true;
-      updatePlayButton();
-      toast("正在播放: " + song.title);
+    // 渐出当前音频再切换
+    var doPlay = function() {
+      audio.src = "/audio-proxy/?url=" + encodeURIComponent(url);
+      audio.playbackRate = state.speed;
+      initWaveform();
+      audio.play().then(function() {
+        state.isPlaying = true;
+        updatePlayButton();
+        fadeInAudio();
+        toast("正在播放: " + song.title);
 
-      // 添加到最近播放
-      addToRecent(song);
+        addToRecent(song);
+        loadLyricWithTranslation(song);
+      }).catch(function(e) {
+        toast("播放失败: " + e.message);
+      });
+    };
 
-      // 获取歌词
-      loadLyric(song);
-    }).catch(function(e) {
-      toast("播放失败: " + e.message);
-    });
+    if (state.isPlaying && !audio.paused) {
+      fadeOutAudio(doPlay);
+    } else {
+      doPlay();
+    }
   });
 
-  // 更新按钮状态
   updateNavButtons();
 }
 
@@ -1599,17 +1650,16 @@ function playNext() {
   if (list.length === 0) return;
 
   var index;
-  if (state.mode === "shuffle") {
+  if (state.mode === "single") {
+    index = state.currentIndex;
+  } else if (state.mode === "shuffle") {
     index = Math.floor(Math.random() * list.length);
+  } else if (state.mode === "loop") {
+    index = state.currentIndex + 1;
+    if (index >= list.length) index = 0;
   } else {
     index = state.currentIndex + 1;
-    if (index >= list.length) {
-      if (state.mode === "loop") {
-        index = 0;
-      } else {
-        return;
-      }
-    }
+    if (index >= list.length) return;
   }
 
   playSong(list[index], index, state.currentTab);
@@ -1635,31 +1685,7 @@ function getCurrentList() {
 // ═══════════════════════════════════════════════
 
 function loadLyric(song) {
-  state.lyricOffset = 0;
-  api("/api/song/lyric?id=" + song.id + "&source=" + song.source, function(err, data) {
-    var lrc = (data && (data.lrc || data.qrc)) || "";
-
-    if (!lrc.trim() && song.source === "bl") {
-      // B站无歌词，从其他平台迁移
-      api("/api/song/lyric/search?title=" + encodeURIComponent(song.title) + "&artist=" + encodeURIComponent(song.artist), function(err2, data2) {
-        var lrc2 = (data2 && (data2.lrc || data2.qrc)) || "";
-        if (lrc2.trim()) {
-          state.lyricLines = parseLyric(lrc2);
-          state.currentLyricIndex = -1;
-          renderLyric();
-          toast("已从其他平台匹配歌词");
-        } else {
-          showLyricEmpty();
-        }
-      });
-    } else if (lrc.trim()) {
-      state.lyricLines = parseLyric(lrc);
-      state.currentLyricIndex = -1;
-      renderLyric();
-    } else {
-      showLyricEmpty();
-    }
-  });
+  loadLyricWithTranslation(song);
 }
 
 function parseLyric(text) {
@@ -1832,6 +1858,12 @@ function renderLyricFullscreen() {
   state.lyricLines.forEach(function(line, i) {
     html += '<div class="lyric-line" data-index="' + i + '">';
     html += '<span class="text">' + escapeHtml(line.text) + '</span>';
+    if (showTranslation && translationLines.length > 0) {
+      var trans = findClosestTranslation(line.time);
+      if (trans) {
+        html += '<div class="translation" style="font-size:14px;color:rgba(255,255,255,.4);margin-top:-2px"><span class="text">' + escapeHtml(trans) + '</span></div>';
+      }
+    }
     html += '</div>';
   });
   body.innerHTML = html;
@@ -2001,9 +2033,18 @@ function renderTrackList(songs, listType) {
     el.addEventListener("click", function() {
       var index = parseInt(el.dataset.index);
       var type = el.dataset.type;
-      var list = type === "search" ? state.searchResults : (type === "playlist" ? state.playlist : state.recent);
+      var list = type === "search" ? state.searchResults : (type === "playlist" ? state.playlist : type === "queue" ? getCurrentList() : state.recent);
       if (list[index]) {
         playSong(list[index], index, type);
+      }
+    });
+
+    el.addEventListener("contextmenu", function(e) {
+      var index = parseInt(el.dataset.index);
+      var type = el.dataset.type;
+      var list = type === "search" ? state.searchResults : (type === "playlist" ? state.playlist : type === "queue" ? getCurrentList() : state.recent);
+      if (list[index]) {
+        showContextMenu(e, list[index], index, type);
       }
     });
   });
@@ -2628,19 +2669,33 @@ function filterSource(source) {
 // ═══════════════════════════════════════════════
 
 function init() {
+  // 初始化主题
+  initTheme();
+
   // 搜索框
   $("searchInput").addEventListener("input", function(e) {
     clearTimeout(searchTimer);
     searchTimer = setTimeout(function() {
       if (state.currentTab === "search") {
-        search(e.target.value);
+        if (e.target.value.trim()) {
+          search(e.target.value);
+        } else {
+          renderSearchHistory();
+        }
       }
     }, 300);
   });
 
   $("searchInput").addEventListener("keydown", function(e) {
-    if (e.key === "Enter") {
+    if (e.key === "Enter" && e.target.value.trim()) {
+      addSearchHistory(e.target.value.trim());
       search(e.target.value);
+    }
+  });
+
+  $("searchInput").addEventListener("focus", function() {
+    if (!this.value.trim() && state.currentTab === "search") {
+      renderSearchHistory();
     }
   });
 
@@ -2663,7 +2718,14 @@ function init() {
 
   // 音频事件
   audio.addEventListener("timeupdate", updateProgress);
-  audio.addEventListener("ended", playNext);
+  audio.addEventListener("ended", function() {
+    if (state.mode === "single") {
+      audio.currentTime = 0;
+      audio.play();
+    } else {
+      playNext();
+    }
+  });
   audio.addEventListener("error", function() {
     toast("播放出错");
     state.isPlaying = false;
@@ -2685,6 +2747,9 @@ function init() {
     if (!e.target.closest("#speedMenu") && !e.target.closest("#speedBadge")) {
       $("speedMenu").classList.remove("show");
     }
+    if (!e.target.closest("#contextMenu")) {
+      hideContextMenu();
+    }
   });
 
   // 键盘快捷键
@@ -2697,10 +2762,10 @@ function init() {
         togglePlay();
         break;
       case "ArrowLeft":
-        skip(-5);
+        if (e.ctrlKey) { playPrev(); } else { skip(-5); }
         break;
       case "ArrowRight":
-        skip(5);
+        if (e.ctrlKey) { playNext(); } else { skip(5); }
         break;
       case "ArrowUp":
         e.preventDefault();
@@ -2709,6 +2774,23 @@ function init() {
       case "ArrowDown":
         e.preventDefault();
         setVolume(Math.max(0, audio.volume - 0.1));
+        break;
+      case "m": case "M":
+        toggleMute();
+        break;
+      case "l": case "L":
+        toggleLyricPanel();
+        break;
+      case "f": case "F":
+        if ($("lyricFullscreen").classList.contains("show")) {
+          closeLyricFullscreen();
+        } else {
+          openLyricFullscreen();
+        }
+        break;
+      case "Escape":
+        closeLyricFullscreen();
+        hideContextMenu();
         break;
     }
   });
@@ -2739,6 +2821,534 @@ function init() {
 }
 
 // ═══════════════════════════════════════════════
+// 暗色主题
+// ═══════════════════════════════════════════════
+
+function initTheme() {
+  var saved = localStorage.getItem("melody_theme") || "light";
+  applyTheme(saved);
+}
+
+function applyTheme(theme) {
+  if (theme === "system") {
+    theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  }
+  document.documentElement.setAttribute("data-theme", theme);
+  localStorage.setItem("melody_theme", theme);
+  var label = $("themeLabel");
+  if (label) label.textContent = theme === "dark" ? "浅色模式" : "深色模式";
+}
+
+function toggleTheme() {
+  var current = document.documentElement.getAttribute("data-theme");
+  applyTheme(current === "dark" ? "light" : "dark");
+}
+
+// ═══════════════════════════════════════════════
+// 封面主题色自适应
+// ═══════════════════════════════════════════════
+
+function extractCoverColor(imgUrl) {
+  if (!imgUrl) return;
+  var img = new Image();
+  img.crossOrigin = "anonymous";
+  img.onload = function() {
+    try {
+      var canvas = document.createElement("canvas");
+      var ctx = canvas.getContext("2d");
+      var size = 64;
+      canvas.width = size;
+      canvas.height = size;
+      ctx.drawImage(img, 0, 0, size, size);
+      var data = ctx.getImageData(0, 0, size, size).data;
+
+      var r = 0, g = 0, b = 0, count = 0;
+      for (var i = 0; i < data.length; i += 16) {
+        r += data[i];
+        g += data[i + 1];
+        b += data[i + 2];
+        count++;
+      }
+      r = Math.round(r / count);
+      g = Math.round(g / count);
+      b = Math.round(b / count);
+
+      // 增强饱和度和亮度
+      var max = Math.max(r, g, b);
+      var min = Math.min(r, g, b);
+      var sat = max === 0 ? 0 : (max - min) / max;
+      if (sat < 0.3) {
+        // 颜色太灰，使用默认红色
+        return;
+      }
+
+      var accent = "rgb(" + r + "," + g + "," + b + ")";
+      var accent2 = "rgb(" + Math.min(255, r + 30) + "," + Math.min(255, g + 30) + "," + Math.min(255, b + 30) + ")";
+      var accentBg = "rgba(" + r + "," + g + "," + b + ",.07)";
+      var accentBg2 = "rgba(" + r + "," + g + "," + b + ",.13)";
+
+      document.documentElement.style.setProperty("--accent", accent);
+      document.documentElement.style.setProperty("--accent2", accent2);
+      document.documentElement.style.setProperty("--accent-bg", accentBg);
+      document.documentElement.style.setProperty("--accent-bg2", accentBg2);
+    } catch(e) {}
+  };
+  img.onerror = function() {};
+  img.src = imgUrl;
+}
+
+function resetAccentColor() {
+  var isDark = document.documentElement.getAttribute("data-theme") === "dark";
+  document.documentElement.style.removeProperty("--accent");
+  document.documentElement.style.removeProperty("--accent2");
+  document.documentElement.style.removeProperty("--accent-bg");
+  document.documentElement.style.removeProperty("--accent-bg2");
+}
+
+// ═══════════════════════════════════════════════
+// 搜索历史
+// ═══════════════════════════════════════════════
+
+function getSearchHistory() {
+  try {
+    return JSON.parse(localStorage.getItem("melody_search_history") || "[]");
+  } catch(e) { return []; }
+}
+
+function addSearchHistory(keyword) {
+  if (!keyword.trim()) return;
+  var history = getSearchHistory();
+  history = history.filter(function(h) { return h !== keyword; });
+  history.unshift(keyword);
+  if (history.length > 10) history = history.slice(0, 10);
+  localStorage.setItem("melody_search_history", JSON.stringify(history));
+}
+
+function clearSearchHistory() {
+  localStorage.removeItem("melody_search_history");
+  renderSearchHistory();
+}
+
+function renderSearchHistory() {
+  var container = $("trackList");
+  var history = getSearchHistory();
+  if (history.length === 0) {
+    showEmptyState();
+    return;
+  }
+
+  var html = '<div style="padding:8px 16px">';
+  html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">';
+  html += '<span style="font-size:14px;font-weight:600;color:var(--text)">搜索历史</span>';
+  html += '<button onclick="App.clearSearchHistory()" style="border:none;background:none;color:var(--text3);font-size:12px;cursor:pointer">清空</button>';
+  html += '</div>';
+  html += '<div style="display:flex;flex-wrap:wrap;gap:8px">';
+  history.forEach(function(h) {
+    html += '<span onclick="App.searchFromHistory(\'' + h.replace(/'/g, "\\'") + '\')" style="padding:6px 14px;border-radius:16px;background:var(--hover);color:var(--text2);font-size:12px;cursor:pointer;transition:all .2s" onmouseover="this.style.background=\'var(--accent-bg2)\';this.style.color=\'var(--accent)\'" onmouseout="this.style.background=\'var(--hover)\';this.style.color=\'var(--text2)\'">' + escapeHtml(h) + '</span>';
+  });
+  html += '</div></div>';
+  container.innerHTML = html;
+}
+
+function searchFromHistory(keyword) {
+  $("searchInput").value = keyword;
+  search(keyword);
+}
+
+// ═══════════════════════════════════════════════
+// 迷你模式
+// ═══════════════════════════════════════════════
+
+var isMiniMode = false;
+
+function toggleMiniMode() {
+  isMiniMode = !isMiniMode;
+  var app = document.querySelector(".app");
+  var playerBar = document.querySelector(".player-bar");
+
+  if (isMiniMode) {
+    app.style.display = "none";
+    playerBar.style.borderTop = "none";
+    document.body.style.height = "auto";
+    document.body.style.minHeight = "80px";
+    document.body.style.maxHeight = "80px";
+    document.body.style.overflow = "hidden";
+    playerBar.style.position = "fixed";
+    playerBar.style.bottom = "0";
+    playerBar.style.left = "0";
+    playerBar.style.right = "0";
+    // 尝试调整窗口大小（WebView2环境）
+    toast("迷你模式");
+  } else {
+    app.style.display = "flex";
+    playerBar.style.borderTop = "";
+    document.body.style.height = "";
+    document.body.style.minHeight = "";
+    document.body.style.maxHeight = "";
+    document.body.style.overflow = "";
+    playerBar.style.position = "";
+    playerBar.style.bottom = "";
+    playerBar.style.left = "";
+    playerBar.style.right = "";
+    toast("完整模式");
+  }
+}
+
+// ═══════════════════════════════════════════════
+// 歌词翻译显示
+// ═══════════════════════════════════════════════
+
+var translationLines = [];
+var showTranslation = true;
+
+function loadLyricWithTranslation(song) {
+  state.lyricOffset = 0;
+  translationLines = [];
+  api("/api/song/lyric?id=" + song.id + "&source=" + song.source, function(err, data) {
+    var lrc = (data && (data.lrc || data.qrc)) || "";
+    var tlrc = (data && data.tlrc) || "";
+
+    if (!lrc.trim() && song.source === "bl") {
+      api("/api/song/lyric/search?title=" + encodeURIComponent(song.title) + "&artist=" + encodeURIComponent(song.artist), function(err2, data2) {
+        var lrc2 = (data2 && (data2.lrc || data2.qrc)) || "";
+        var tlrc2 = (data2 && data2.tlrc) || "";
+        if (lrc2.trim()) {
+          state.lyricLines = parseLyric(lrc2);
+          translationLines = parseLyric(tlrc2);
+          state.currentLyricIndex = -1;
+          renderLyricWithTranslation();
+          toast("已从其他平台匹配歌词");
+        } else {
+          showLyricEmpty();
+        }
+      });
+    } else if (lrc.trim()) {
+      state.lyricLines = parseLyric(lrc);
+      translationLines = parseLyric(tlrc);
+      state.currentLyricIndex = -1;
+      renderLyricWithTranslation();
+    } else {
+      showLyricEmpty();
+    }
+  });
+}
+
+function renderLyricWithTranslation() {
+  var body = $("lyricBody");
+  if (state.lyricLines.length === 0) {
+    showLyricEmpty();
+    return;
+  }
+
+  // 构建翻译时间映射
+  var transMap = {};
+  translationLines.forEach(function(line) {
+    transMap[line.time] = line.text;
+  });
+
+  var html = "";
+  state.lyricLines.forEach(function(line, i) {
+    html += '<div class="lyric-line" data-index="' + i + '">';
+    html += '<span class="text">' + escapeHtml(line.text) + '</span>';
+    // 查找最接近的翻译
+    if (showTranslation && translationLines.length > 0) {
+      var trans = findClosestTranslation(line.time);
+      if (trans) {
+        html += '<div class="translation"><span class="text">' + escapeHtml(trans) + '</span></div>';
+      }
+    }
+    html += '</div>';
+  });
+
+  body.innerHTML = html;
+}
+
+function findClosestTranslation(time) {
+  var best = null;
+  var bestDiff = Infinity;
+  for (var i = 0; i < translationLines.length; i++) {
+    var diff = Math.abs(translationLines[i].time - time);
+    if (diff < bestDiff && diff < 1.0) {
+      bestDiff = diff;
+      best = translationLines[i].text;
+    }
+  }
+  return best;
+}
+
+function toggleTranslation() {
+  showTranslation = !showTranslation;
+  renderLyricWithTranslation();
+  renderLyricFullscreen();
+  var btn = $("btnTranslation");
+  var btnFs = $("btnTranslationFs");
+  if (btn) btn.style.color = showTranslation ? "var(--accent)" : "";
+  if (btnFs) btnFs.style.color = showTranslation ? "#fff" : "rgba(255,255,255,.4)";
+  toast(showTranslation ? "显示翻译" : "隐藏翻译");
+}
+
+// ═══════════════════════════════════════════════
+// 音频渐入渐出
+// ═══════════════════════════════════════════════
+
+var fadeTimer = null;
+
+function fadeOutAudio(callback) {
+  if (!state.isPlaying || audio.paused) {
+    if (callback) callback();
+    return;
+  }
+  var startVol = audio.volume;
+  var steps = 15;
+  var stepTime = 200 / steps;
+  var step = 0;
+  clearInterval(fadeTimer);
+  fadeTimer = setInterval(function() {
+    step++;
+    audio.volume = startVol * (1 - step / steps);
+    if (step >= steps) {
+      clearInterval(fadeTimer);
+      audio.volume = 0;
+      if (callback) callback();
+    }
+  }, stepTime);
+}
+
+function fadeInAudio(targetVol) {
+  targetVol = targetVol || state.prevVolume || 0.8;
+  audio.volume = 0;
+  var steps = 15;
+  var stepTime = 200 / steps;
+  var step = 0;
+  clearInterval(fadeTimer);
+  fadeTimer = setInterval(function() {
+    step++;
+    audio.volume = targetVol * (step / steps);
+    if (step >= steps) {
+      clearInterval(fadeTimer);
+      audio.volume = targetVol;
+    }
+  }, stepTime);
+}
+
+// ═══════════════════════════════════════════════
+// 播放队列
+// ═══════════════════════════════════════════════
+
+function showPlayQueue() {
+  var list = getCurrentList();
+  var container = $("trackList");
+
+  if (!list || list.length === 0) {
+    container.innerHTML = '<div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg><div class="text">播放队列为空</div><div class="subtext">搜索并播放音乐后会显示在这里</div></div>';
+    return;
+  }
+
+  var html = "";
+  list.forEach(function(song, i) {
+    var isPlaying = state.currentSong && state.currentSong.id === song.id && state.currentSong.source === song.source;
+
+    html += '<div class="track' + (isPlaying ? ' playing' : '') + '" data-index="' + i + '" draggable="true">';
+    html += '<div class="num">' + (isPlaying ? '<svg viewBox="0 0 24 24" fill="var(--accent)" width="14" height="14"><path d="M8 5v14l11-7z"/></svg>' : (i + 1)) + '</div>';
+    html += '<div class="info">';
+    html += '<div class="title">' + escapeHtml(song.title) + '</div>';
+    html += '<div class="meta">' + escapeHtml(song.artist) + '</div>';
+    html += '</div>';
+    html += '<span class="source ' + song.source + '">' + SOURCE_LABELS[song.source] + '</span>';
+    html += '<div class="actions">';
+    html += '<button class="action-btn" onclick="event.stopPropagation();App.removeFromQueue(' + i + ')" title="从队列移除">';
+    html += '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+    html += '</button>';
+    html += '</div>';
+    html += '</div>';
+  });
+
+  container.innerHTML = html;
+
+  // 绑定点击和拖拽事件
+  var tracks = container.querySelectorAll(".track");
+  tracks.forEach(function(el) {
+    el.addEventListener("click", function() {
+      var index = parseInt(el.dataset.index);
+      var list = getCurrentList();
+      if (list[index]) {
+        playSong(list[index], index, state.currentTab);
+      }
+    });
+
+    el.addEventListener("dragstart", function(e) {
+      e.dataTransfer.setData("text/plain", el.dataset.index);
+      el.style.opacity = "0.5";
+    });
+
+    el.addEventListener("dragend", function() {
+      el.style.opacity = "1";
+    });
+
+    el.addEventListener("dragover", function(e) {
+      e.preventDefault();
+      el.style.borderTop = "2px solid var(--accent)";
+    });
+
+    el.addEventListener("dragleave", function() {
+      el.style.borderTop = "";
+    });
+
+    el.addEventListener("drop", function(e) {
+      e.preventDefault();
+      el.style.borderTop = "";
+      var fromIndex = parseInt(e.dataTransfer.getData("text/plain"));
+      var toIndex = parseInt(el.dataset.index);
+      if (fromIndex !== toIndex) {
+        var list = getCurrentList();
+        var item = list.splice(fromIndex, 1)[0];
+        list.splice(toIndex, 0, item);
+        // 更新 currentIndex
+        if (state.currentSong && fromIndex === state.currentIndex) {
+          state.currentIndex = toIndex;
+        } else if (fromIndex < state.currentIndex && toIndex >= state.currentIndex) {
+          state.currentIndex--;
+        } else if (fromIndex > state.currentIndex && toIndex <= state.currentIndex) {
+          state.currentIndex++;
+        }
+        showPlayQueue();
+      }
+    });
+  });
+}
+
+function removeFromQueue(index) {
+  var list = getCurrentList();
+  if (index === state.currentIndex) {
+    toast("不能移除正在播放的歌曲");
+    return;
+  }
+  list.splice(index, 1);
+  if (index < state.currentIndex) {
+    state.currentIndex--;
+  }
+  showPlayQueue();
+  toast("已从队列移除");
+}
+
+// ═══════════════════════════════════════════════
+// 右键菜单
+// ═══════════════════════════════════════════════
+
+function showContextMenu(e, song, index, listType) {
+  e.preventDefault();
+  e.stopPropagation();
+
+  var menu = $("contextMenu");
+  var html = '';
+
+  html += '<button class="menu-item" onclick="App.contextPlay()">▶ 播放</button>';
+  html += '<button class="menu-item" onclick="App.contextPlayNext()">⏭ 下一首播放</button>';
+  html += '<button class="menu-item" onclick="App.contextAddToPlaylist()">❤ 添加到歌单</button>';
+  if (listType === "playlist") {
+    html += '<button class="menu-item danger" onclick="App.contextRemoveFromPlaylist()">✕ 从歌单移除</button>';
+  }
+  html += '<button class="menu-item" onclick="App.contextCopyName()">📋 复制歌曲名</button>';
+
+  menu.innerHTML = html;
+  menu.classList.add("show");
+
+  // 保存上下文
+  menu._song = song;
+  menu._index = index;
+  menu._listType = listType;
+
+  // 定位
+  var x = Math.min(e.clientX, window.innerWidth - 180);
+  var y = Math.min(e.clientY, window.innerHeight - 200);
+  menu.style.left = x + "px";
+  menu.style.top = y + "px";
+}
+
+function hideContextMenu() {
+  $("contextMenu").classList.remove("show");
+}
+
+function contextPlay() {
+  var menu = $("contextMenu");
+  if (menu._song) {
+    playSong(menu._song, menu._index, menu._listType);
+  }
+  hideContextMenu();
+}
+
+function contextPlayNext() {
+  var menu = $("contextMenu");
+  if (menu._song) {
+    var list = getCurrentList();
+    list.splice(state.currentIndex + 1, 0, menu._song);
+    toast("已添加到下一首");
+  }
+  hideContextMenu();
+}
+
+function contextAddToPlaylist() {
+  var menu = $("contextMenu");
+  if (menu._song) {
+    addToPlaylist(menu._song);
+  }
+  hideContextMenu();
+}
+
+function contextRemoveFromPlaylist() {
+  var menu = $("contextMenu");
+  if (menu._song && menu._listType === "playlist") {
+    removeFromPlaylist(menu._index);
+  }
+  hideContextMenu();
+}
+
+function contextCopyName() {
+  var menu = $("contextMenu");
+  if (menu._song) {
+    var text = menu._song.title + " - " + menu._song.artist;
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(text);
+    }
+    toast("已复制: " + text);
+  }
+  hideContextMenu();
+}
+
+// ═══════════════════════════════════════════════
+// 自动切源 Fallback
+// ═══════════════════════════════════════════════
+
+function getSongURLWithFallback(song, callback) {
+  var sources = [song.source];
+  // 添加其他源作为备选
+  var allSources = ["kg", "ne", "bl"];
+  allSources.forEach(function(s) {
+    if (s !== song.source) sources.push(s);
+  });
+
+  var tryIndex = 0;
+
+  function tryNext() {
+    if (tryIndex >= sources.length) {
+      callback(new Error("所有源均不可用"));
+      return;
+    }
+    var src = sources[tryIndex];
+    api("/api/song/url?id=" + song.id + "&source=" + src, function(err, data) {
+      if (!err && data && data.url) {
+        callback(null, data.url, src);
+      } else {
+        tryIndex++;
+        tryNext();
+      }
+    });
+  }
+
+  tryNext();
+}
+
+// ═══════════════════════════════════════════════
 // 公开 API
 // ═══════════════════════════════════════════════
 
@@ -2755,6 +3365,18 @@ window.App = {
   openLyricFullscreen: openLyricFullscreen,
   closeLyricFullscreen: closeLyricFullscreen,
   adjustLyricOffset: adjustLyricOffset,
+  toggleTheme: toggleTheme,
+  toggleMiniMode: toggleMiniMode,
+  toggleTranslation: toggleTranslation,
+  showPlayQueue: showPlayQueue,
+  removeFromQueue: removeFromQueue,
+  searchFromHistory: searchFromHistory,
+  clearSearchHistory: clearSearchHistory,
+  contextPlay: contextPlay,
+  contextPlayNext: contextPlayNext,
+  contextAddToPlaylist: contextAddToPlaylist,
+  contextRemoveFromPlaylist: contextRemoveFromPlaylist,
+  contextCopyName: contextCopyName,
   addToPlaylist: function(index) {
     var list = getCurrentList();
     if (list[index]) {

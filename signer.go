@@ -108,17 +108,23 @@ func (s *bilibiliSigner) fetchKey() {
 func (s *bilibiliSigner) sign(params map[string]string) string {
 	s.fetchKey()
 
+	// 拷贝一份 params，避免并发写入原 map
+	safeParams := make(map[string]string, len(params)+1)
+	for k, v := range params {
+		safeParams[k] = v
+	}
+
 	// 添加时间戳
-	params["wts"] = strconv.FormatInt(time.Now().Unix(), 10)
+	safeParams["wts"] = strconv.FormatInt(time.Now().Unix(), 10)
 
 	// 过滤特殊字符
-	for k, v := range params {
-		params[k] = filterValue(v)
+	for k, v := range safeParams {
+		safeParams[k] = filterValue(v)
 	}
 
 	// 排序参数
-	keys := make([]string, 0, len(params))
-	for k := range params {
+	keys := make([]string, 0, len(safeParams))
+	for k := range safeParams {
 		keys = append(keys, k)
 	}
 	sort.Strings(keys)
@@ -126,7 +132,7 @@ func (s *bilibiliSigner) sign(params map[string]string) string {
 	// 构建URL编码的查询字符串
 	var parts []string
 	for _, k := range keys {
-		parts = append(parts, url.QueryEscape(k)+"="+url.QueryEscape(params[k]))
+		parts = append(parts, url.QueryEscape(k)+"="+url.QueryEscape(safeParams[k]))
 	}
 	query := strings.Join(parts, "&")
 
@@ -137,9 +143,9 @@ func (s *bilibiliSigner) sign(params map[string]string) string {
 
 	// 计算签名（MD5）
 	h := md5.Sum([]byte(query + s.key))
-	params["w_rid"] = fmt.Sprintf("%x", h)
+	safeParams["w_rid"] = fmt.Sprintf("%x", h)
 
 	// 返回完整的查询字符串
-	return query + "&w_rid=" + params["w_rid"]
+	return query + "&w_rid=" + safeParams["w_rid"]
 }
 
