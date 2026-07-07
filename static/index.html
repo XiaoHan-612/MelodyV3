@@ -335,82 +335,92 @@ function drawIL(){
   // ═══ 1. Dramatic waveform background ═══
   if(analyser&&freqData){
     analyser.getByteFrequencyData(freqData);
-    // Large radial rings
-    for(var ring=0;ring<5;ring++){
-      var baseR=(50+ring*70)*1;
-      ctx.save();ctx.beginPath();ctx.lineWidth=(2.5-ring*0.4);
-      ctx.globalAlpha=0.12+ring*0.02;
-      ctx.strokeStyle="rgba(0,122,255,0.3)";
-      var pts=80;
+    var bass=0,mid=0;for(var i=0;i<8;i++)bass+=freqData[i];for(var i=8;i<32;i++)mid+=freqData[i];
+    bass=bass/8/255;mid=mid/24/255;
+    // Wide radial rings
+    for(var ring=0;ring<8;ring++){
+      var baseR=(30+ring*55+bass*80);
+      ctx.save();ctx.beginPath();ctx.lineWidth=(3-ring*0.3);
+      ctx.globalAlpha=0.08+bass*0.06;
+      ctx.strokeStyle="rgba(0,122,255,0.4)";
+      ctx.shadowBlur=10;ctx.shadowColor="rgba(0,122,255,0.3)";
+      var pts=100;
       for(var i=0;i<=pts;i++){
         var angle=(i/pts)*6.28;
         var fval=freqData[Math.floor((i/pts)*32)]/255;
-        var r=baseR+fval*60+Math.sin(angle*(2+ring)+t*(0.8+ring*0.15))*15;
-        var px=w/2+Math.cos(angle)*r;var py=h*0.42+Math.sin(angle)*r*0.7;
+        var r=baseR+fval*80+Math.sin(angle*(3+ring)+t*(0.5+ring*0.1))*20;
+        var px=w/2+Math.cos(angle)*r;var py=h*0.42+Math.sin(angle)*r*0.65;
         if(i===0)ctx.moveTo(px,py);else ctx.lineTo(px,py);
       }
       ctx.closePath();ctx.stroke();ctx.restore();
     }
-    // Vertical beams from bottom
-    var beamN=16;
+    // Wide vertical beams
+    var beamN=20;
     for(var b=0;b<beamN;b++){
       var bx=(b/beamN)*w+w/beamN*0.5;
       var fbi=Math.floor((b/beamN)*32);
       var fbv=freqData[fbi]/255;
-      if(fbv<0.1)continue;
+      if(fbv<0.08)continue;
       ctx.save();
-      var beamH=h*(0.2+fbv*0.5);
+      var beamH=h*(0.15+fbv*0.6);
       var bGrad=ctx.createLinearGradient(bx,h,bx,h-beamH);
-      bGrad.addColorStop(0,"rgba(0,122,255,"+fbv*0.2+")");
+      bGrad.addColorStop(0,"rgba(0,122,255,"+fbv*0.25+")");
+      bGrad.addColorStop(0.6,"rgba(64,156,255,"+fbv*0.12+")");
       bGrad.addColorStop(1,"rgba(0,122,255,0)");
-      ctx.fillStyle=bGrad;ctx.globalAlpha=0.3+fbv*0.4;
-      ctx.fillRect(bx-(6+fbv*12)*0.5,h-beamH,(6+fbv*12),beamH);
+      ctx.fillStyle=bGrad;ctx.globalAlpha=0.25+fbv*0.5;
+      ctx.fillRect(bx-(8+fbv*18)*0.5,h-beamH,(8+fbv*18),beamH);
       ctx.restore();
     }
-    // Center glow pulse
-    var bass=0;for(var i=0;i<8;i++)bass+=freqData[i];bass=bass/8/255;
-    var glowR=60+bass*180;
+    // Large center glow
+    var glowR=80+bass*300;
     var cg=ctx.createRadialGradient(w/2,h*0.42,0,w/2,h*0.42,glowR);
-    cg.addColorStop(0,"rgba(0,122,255,"+(0.08+bass*0.15)+")");
+    cg.addColorStop(0,"rgba(0,122,255,"+(0.1+bass*0.25)+")");
+    cg.addColorStop(0.3,"rgba(64,156,255,"+(0.04+bass*0.12)+")");
     cg.addColorStop(1,"rgba(0,0,0,0)");
     ctx.fillStyle=cg;ctx.fillRect(0,0,w,h);
   }
 
-  // ═══ 2. Background lyrics as stars (more spacing, stronger blur) ═══
-  for(var i=0;i<allLines.length;i++){
-    if(ci>=0&&Math.abs(i-ci)<=1)continue;
-    var seed=i*7919;
-    var px=(Math.sin(seed)*0.45+0.5)*w;
-    var py=(Math.cos(seed*1.3)*0.4+0.5)*h;
-    var dist=ci>=0?Math.abs(i-ci):3;
-    var baseAlpha=0.45-Math.min(dist,10)*0.03;
-    var twinkle=0.65+Math.sin(t*2.2+seed)*0.35;
+  // ═══ 2. Background lyrics — only next 3 lines, fade in/out ═══
+  var fadeLines=[];
+  if(ci>=0){
+    for(var i=ci+1;i<=Math.min(ci+3,allLines.length-1);i++){
+      fadeLines.push({line:allLines[i],idx:i,dist:i-ci});
+    }
+  }
+  for(var i=0;i<fadeLines.length;i++){
+    var fl=fadeLines[i];
+    var dist=fl.dist;
+    // Position: spread out more, each line at different height
+    var baseY=h*0.55+(dist-1)*h*0.18;
+    var baseX=w*0.5+Math.sin(fl.idx*2.7)*w*0.25;
+    // Fade: closer = brighter
+    var baseAlpha=0.45-dist*0.12;
+    var twinkle=0.7+Math.sin(t*2+fl.idx*3.5)*0.3;
     var alpha=baseAlpha*twinkle;
     if(alpha<0.03)continue;
-    var sizeSeed=Math.abs(Math.sin(seed*13));
-    var fs=13+sizeSeed*16;
+    var fs=Math.min(28,Math.max(16,w/(fl.line.text.length*0.7)));
     ctx.save();
-    ctx.font=(sizeSeed>0.5?"600 ":"400 ")+fs+"px -apple-system,'PingFang SC',sans-serif";
+    ctx.font="400 "+fs+"px -apple-system,'PingFang SC',sans-serif";
     ctx.textAlign="center";ctx.textBaseline="middle";
     ctx.globalAlpha=alpha;
-    ctx.fillStyle="rgba(143,220,255,0.7)";
-    ctx.shadowBlur=15;ctx.shadowColor="rgba(0,122,255,"+alpha*0.5+")";
-    ctx.fillText(allLines[i].text,px,py);
+    ctx.fillStyle="rgba(143,220,255,0.6)";
+    ctx.shadowBlur=12;ctx.shadowColor="rgba(0,122,255,"+alpha*0.4+")";
+    ctx.fillText(fl.line.text,baseX,baseY);
     ctx.shadowBlur=0;ctx.restore();
   }
 
-  // ═══ 3. Sparkles ═══
-  for(var i=0;i<30;i++){
+  // Sparkles
+  for(var i=0;i<25;i++){
     var seed=i*3571;
     var sx=(Math.sin(seed+t*0.5)*0.48+0.5)*w;
     var sy=(Math.cos(seed*1.7+t*0.35)*0.45+0.5)*h;
-    var sa=0.12+Math.sin(t*3+seed)*0.1;
-    var sr=1.5+Math.sin(t*2+seed)*0.8;
+    var sa=0.1+Math.sin(t*3+seed)*0.08;
+    var sr=1.2+Math.sin(t*2+seed)*0.6;
     ctx.beginPath();ctx.arc(sx,sy,sr,0,6.28);
     ctx.fillStyle="rgba(180,230,255,"+sa+")";ctx.fill();
   }
 
-  // ═══ 4. Active lyric — smooth per-char highlight ═══
+  // ═══ 3. Active lyric — smooth per-char ═══
   if(ci<0||ci>=allLines.length)return;
   var curLine=allLines[ci];
   var lineStart=curLine.time;
@@ -429,16 +439,13 @@ function drawIL(){
   var startX=(w-totalW)/2;var x=startX;
   for(var i=0;i<chars.length;i++){
     var diff=charProg-(i/chars.length);
-    var brightness;
-    if(diff>=0)brightness=Math.max(0.15,1-diff*3);
-    else brightness=Math.max(0.15,1+diff*2.5);
+    var brightness;if(diff>=0)brightness=Math.max(0.15,1-diff*3);else brightness=Math.max(0.15,1+diff*2.5);
     brightness=Math.min(1,brightness);
     brightness=brightness*brightness*(3-2*brightness);
     ctx.save();
     var rr=Math.round(100+155*brightness);
     var gg=Math.round(190+65*brightness);
-    var bb=Math.round(255);
-    ctx.fillStyle="rgba("+rr+","+gg+","+bb+","+(0.15+brightness*0.85)+")";
+    ctx.fillStyle="rgba("+rr+","+gg+",255,"+(0.15+brightness*0.85)+")";
     ctx.shadowBlur=brightness*30;
     ctx.shadowColor="rgba(0,122,255,"+brightness*0.8+")";
     ctx.fillText(chars[i],x+widths[i]/2,h*.4);
@@ -446,7 +453,7 @@ function drawIL(){
   }
   ctx.restore();
 
-  // ═══ 5. Translation — same per-char highlight ═══
+  // ═══ 4. Translation — per-char highlight ═══
   if(showTrans&&transLines.length){
     var trText=findTr(curLine.time);
     if(trText){
@@ -461,11 +468,9 @@ function drawIL(){
         var br;if(diff>=0)br=Math.max(0.1,1-diff*3);else br=Math.max(0.1,1+diff*2.5);
         br=Math.min(1,br);br=br*br*(3-2*br);
         ctx.save();
-        var rr=Math.round(100+155*br);
-        var gg=Math.round(180+75*br);
+        var rr=Math.round(100+155*br);var gg=Math.round(180+75*br);
         ctx.fillStyle="rgba("+rr+","+gg+",255,"+(0.1+br*0.6)+")";
-        ctx.shadowBlur=br*15;
-        ctx.shadowColor="rgba(0,122,255,"+br*0.5+")";
+        ctx.shadowBlur=br*15;ctx.shadowColor="rgba(0,122,255,"+br*0.5+")";
         ctx.fillText(trChars[i],trX+trWidths[i]/2,h*.4+fontSize*.7);
         ctx.restore();trX+=trWidths[i];
       }
@@ -473,12 +478,12 @@ function drawIL(){
     }
   }
 
-  // ═══ 6. Next line preview ═══
+  // ═══ 5. Next line preview ═══
   if(ci+1<allLines.length){
     var nx=allLines[ci+1];
     ctx.save();ctx.font="400 "+Math.min(18,Math.max(13,w/(nx.text.length*0.7)))+"px -apple-system,'PingFang SC',sans-serif";
     ctx.textAlign="center";ctx.textBaseline="middle";
-    ctx.globalAlpha=0.15;ctx.fillStyle="rgba(168,246,255,0.5)";
+    ctx.globalAlpha=0.12;ctx.fillStyle="rgba(168,246,255,0.5)";
     ctx.fillText(nx.text,w/2,h*.75);ctx.restore();
   }
 }
