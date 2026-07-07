@@ -107,7 +107,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 .volume-icon{cursor:pointer;color:var(--text3);transition:color .2s;flex-shrink:0}
 .volume-icon:hover{color:var(--text)}.volume-icon.muted{color:var(--accent)}
 .volume-icon svg{width:16px;height:16px}
-.volume-slider{-webkit-appearance:none;width:80px;height:3px;border-radius:2px;background:var(--border);outline:none}
+.volume-slider{-webkit-appearance:none;width:100px;height:3px;border-radius:2px;background:var(--border);outline:none}
 .volume-slider::-webkit-slider-thumb{-webkit-appearance:none;width:12px;height:12px;border-radius:50%;background:var(--accent);cursor:pointer;transition:transform .15s var(--bounce)}
 .volume-slider::-webkit-slider-thumb:hover{transform:scale(1.3)}
 .main-waveform{position:fixed;bottom:96px;left:16px;right:16px;height:60px;pointer-events:none;z-index:15}
@@ -120,11 +120,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 .lyric-line .translation{font-size:12px;color:var(--text2);margin-top:2px}
 .lyric-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:12px;color:var(--text3)}
 .lyric-empty svg{width:40px;height:40px;opacity:.15}
-.immersive-lyrics{position:fixed;inset:0;z-index:1000;display:none;flex-direction:column;background:#08090B;color:#fff;overflow:hidden}
+.immersive-lyrics{position:fixed;inset:0;z-index:1000;display:none;flex-direction:column;color:#fff;overflow:hidden;transition:background .5s}
 .immersive-lyrics.show{display:flex}
-.il-bg{position:absolute;inset:-80px;background-size:cover;background-position:center;filter:blur(100px) saturate(1.4) brightness(.18);transform:scale(1.3);opacity:.6}
-.il-bg::before{content:"";position:absolute;inset:0;background:radial-gradient(ellipse at 50% 40%,rgba(0,122,255,.08) 0%,transparent 60%)}
-.il-bg::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.3) 0%,rgba(0,0,0,.55) 40%,rgba(0,0,0,.8) 100%)}
+[data-theme="light"] .immersive-lyrics{background:linear-gradient(180deg,#080C18 0%,#0E1828 50%,#080C18 100%)}
+[data-theme="dark"] .immersive-lyrics{background:linear-gradient(180deg,#050810 0%,#0A1020 50%,#050810 100%)}
+.il-bg{position:absolute;inset:-80px;background-size:cover;background-position:center;filter:blur(100px) saturate(1.4) brightness(.2);transform:scale(1.3);opacity:.55}
+.il-bg::before{content:"";position:absolute;inset:0;background:radial-gradient(ellipse at 50% 40%,rgba(0,122,255,.1) 0%,transparent 60%)}
+.il-bg::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.25) 0%,rgba(0,0,0,.5) 40%,rgba(0,0,0,.75) 100%)}
 .il-header{position:relative;z-index:3;display:flex;align-items:center;justify-content:space-between;padding:20px 32px;flex-shrink:0}
 .il-back{width:36px;height:36px;border-radius:50%;border:none;background:rgba(255,255,255,.06);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s var(--smooth)}
 .il-back:hover{background:rgba(255,255,255,.12)}
@@ -212,7 +214,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
     <div class="extra-controls">
       <button class="ctrl-btn" id="btnLyric" onclick="App.toggleLyricPanel()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 10h12M4 14h8M4 18h4"/></svg></button>
       <span class="speed-badge" id="speedBadge" onclick="App.toggleSpeedMenu()">1x</span>
-      <div class="volume-wrap"><span class="volume-icon" id="volumeIcon" onclick="App.toggleMute()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg></span><input type="range" class="volume-slider" id="volumeSlider" min="0" max="100" value="80"></div>
+      <div class="volume-wrap"><span class="volume-icon" id="volumeIcon" onclick="App.toggleMute()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg></span><input type="range" class="volume-slider" id="volumeSlider" min="0" max="100" value="50"></div>
     </div>
   </div>
 </footer>
@@ -227,8 +229,8 @@ var MODE_LABELS={seq:"顺序播放",loop:"列表循环",single:"单曲循环",sh
 var MODE_ORDER=["seq","loop","single","shuffle"];
 var MODE_ICONS={seq:'<path d="M3 6h14M3 12h14M3 18h14"/><path d="M17 6l4 6-4 6"/>',loop:'<path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/>',single:'<path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/><circle cx="12" cy="14" r="3" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M10.5 14h3" stroke="currentColor" stroke-width="1.2"/>',shuffle:'<path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/>'};
 var SOURCE_LABELS={kg:"酷狗",ne:"网易云",bl:"B站"};
-var audio=document.getElementById("audio");audio.volume=0.8;
-var S={tab:"search",src:"all",results:[],pl:[],recent:[],song:null,idx:-1,play:false,mode:"loop",speed:1,muted:false,prevVol:0.8,lines:[],lyricIdx:-1,lyricVis:true,lyricOff:0,lyricsOpen:false};
+var audio=document.getElementById("audio");audio.volume=0.5;
+var S={tab:"search",src:"all",results:[],pl:[],recent:[],song:null,idx:-1,play:false,mode:"loop",speed:1,muted:false,prevVol:0.5,lines:[],lyricIdx:-1,lyricVis:true,lyricOff:0,lyricsOpen:false};
 function $(id){return document.getElementById(id)}
 function fmt(s){if(!s||!isFinite(s))return"00:00";var m=Math.floor(s/60);return String(m).padStart(2,"0")+":"+String(Math.floor(s%60)).padStart(2,"0")}
 function toast(m){var t=$("toast");t.textContent=m;t.classList.add("show");clearTimeout(t._t);t._t=setTimeout(function(){t.classList.remove("show")},2500)}
@@ -398,20 +400,19 @@ function drawIL(){
   var x=startX;
 
   for(var i=0;i<chars.length;i++){
-    // Smooth: each char has a transition zone around charProg
     var charCenter=(i+0.5)/chars.length;
     var dist=Math.abs(charProg-charCenter);
-    // Brightness: 1 at current position, fading to 0.15 away
-    var brightness=Math.max(0.15,1-dist*4);
+    var brightness=Math.max(0.12,1-dist*3.5);
     brightness=Math.min(1,brightness);
-
+    // Smooth easing
+    brightness=brightness*brightness*(3-2*brightness); // smoothstep
     ctx.save();
     var r=Math.round(168+(240-168)*brightness);
-    var g=Math.round(246+(250-246)*brightness);
+    var g=Math.round(246+(252-246)*brightness);
     var b=Math.round(255+(255-255)*brightness);
-    ctx.fillStyle="rgba("+r+","+g+","+b+","+(0.18+brightness*0.82)+")";
-    ctx.shadowBlur=brightness*20;
-    ctx.shadowColor="rgba(10,132,255,"+brightness*0.6+")";
+    ctx.fillStyle="rgba("+r+","+g+","+b+","+(0.15+brightness*0.85)+")";
+    ctx.shadowBlur=brightness*28;
+    ctx.shadowColor="rgba(10,132,255,"+brightness*0.7+")";
     ctx.fillText(chars[i],x+widths[i]/2,h*.42);
     ctx.restore();
     x+=widths[i];
