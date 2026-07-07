@@ -327,51 +327,90 @@ function drawIL(){
   var w=ilCv.width=ilCv.parentElement.clientWidth;
   var h=ilCv.height=ilCv.parentElement.clientHeight;
   if(w<10||h<10)return;
-  var ctx=ilCtx;
-  var t=Date.now()*.001;
+  var ctx=ilCtx,t=Date.now()*.001;
   ctx.clearRect(0,0,w,h);
   if(!S.lines.length)return;
-  var allLines=S.lines;
-  var ci=S.lyricIdx;
+  var allLines=S.lines,ci=S.lyricIdx;
 
-  // ── 1. Background lyrics as stars ──
+  // ═══ 1. Dramatic waveform background ═══
+  if(analyser&&freqData){
+    analyser.getByteFrequencyData(freqData);
+    // Large radial rings
+    for(var ring=0;ring<5;ring++){
+      var baseR=(50+ring*70)*1;
+      ctx.save();ctx.beginPath();ctx.lineWidth=(2.5-ring*0.4);
+      ctx.globalAlpha=0.12+ring*0.02;
+      ctx.strokeStyle="rgba(0,122,255,0.3)";
+      var pts=80;
+      for(var i=0;i<=pts;i++){
+        var angle=(i/pts)*6.28;
+        var fval=freqData[Math.floor((i/pts)*32)]/255;
+        var r=baseR+fval*60+Math.sin(angle*(2+ring)+t*(0.8+ring*0.15))*15;
+        var px=w/2+Math.cos(angle)*r;var py=h*0.42+Math.sin(angle)*r*0.7;
+        if(i===0)ctx.moveTo(px,py);else ctx.lineTo(px,py);
+      }
+      ctx.closePath();ctx.stroke();ctx.restore();
+    }
+    // Vertical beams from bottom
+    var beamN=16;
+    for(var b=0;b<beamN;b++){
+      var bx=(b/beamN)*w+w/beamN*0.5;
+      var fbi=Math.floor((b/beamN)*32);
+      var fbv=freqData[fbi]/255;
+      if(fbv<0.1)continue;
+      ctx.save();
+      var beamH=h*(0.2+fbv*0.5);
+      var bGrad=ctx.createLinearGradient(bx,h,bx,h-beamH);
+      bGrad.addColorStop(0,"rgba(0,122,255,"+fbv*0.2+")");
+      bGrad.addColorStop(1,"rgba(0,122,255,0)");
+      ctx.fillStyle=bGrad;ctx.globalAlpha=0.3+fbv*0.4;
+      ctx.fillRect(bx-(6+fbv*12)*0.5,h-beamH,(6+fbv*12),beamH);
+      ctx.restore();
+    }
+    // Center glow pulse
+    var bass=0;for(var i=0;i<8;i++)bass+=freqData[i];bass=bass/8/255;
+    var glowR=60+bass*180;
+    var cg=ctx.createRadialGradient(w/2,h*0.42,0,w/2,h*0.42,glowR);
+    cg.addColorStop(0,"rgba(0,122,255,"+(0.08+bass*0.15)+")");
+    cg.addColorStop(1,"rgba(0,0,0,0)");
+    ctx.fillStyle=cg;ctx.fillRect(0,0,w,h);
+  }
+
+  // ═══ 2. Background lyrics as stars (more spacing, stronger blur) ═══
   for(var i=0;i<allLines.length;i++){
     if(ci>=0&&Math.abs(i-ci)<=1)continue;
     var seed=i*7919;
-    var px=(Math.sin(seed)*0.42+0.5)*w;
-    var py=(Math.cos(seed*1.3)*0.38+0.5)*h;
+    var px=(Math.sin(seed)*0.45+0.5)*w;
+    var py=(Math.cos(seed*1.3)*0.4+0.5)*h;
     var dist=ci>=0?Math.abs(i-ci):3;
-    // Brighter for closer lines, dimmer for far ones
-    var baseAlpha=0.55-Math.min(dist,8)*0.04;
-    var twinkle=0.7+Math.sin(t*2+seed)*0.3;
+    var baseAlpha=0.45-Math.min(dist,10)*0.03;
+    var twinkle=0.65+Math.sin(t*2.2+seed)*0.35;
     var alpha=baseAlpha*twinkle;
-    if(alpha<0.05)continue;
-    // Random size: 14-32px
-    var sizeSeed=Math.abs(Math.sin(seed*13))*1;
-    var fs=14+sizeSeed*18;
-    var weight=sizeSeed>0.5?"600":"400";
+    if(alpha<0.03)continue;
+    var sizeSeed=Math.abs(Math.sin(seed*13));
+    var fs=13+sizeSeed*16;
     ctx.save();
-    ctx.font=weight+" "+fs+"px -apple-system,'PingFang SC',sans-serif";
+    ctx.font=(sizeSeed>0.5?"600 ":"400 ")+fs+"px -apple-system,'PingFang SC',sans-serif";
     ctx.textAlign="center";ctx.textBaseline="middle";
     ctx.globalAlpha=alpha;
-    ctx.fillStyle="rgba(143,220,255,0.8)";
-    ctx.shadowBlur=12;ctx.shadowColor="rgba(0,122,255,"+alpha*0.6+")";
+    ctx.fillStyle="rgba(143,220,255,0.7)";
+    ctx.shadowBlur=15;ctx.shadowColor="rgba(0,122,255,"+alpha*0.5+")";
     ctx.fillText(allLines[i].text,px,py);
     ctx.shadowBlur=0;ctx.restore();
   }
 
-  // ── 2. Sparkles ──
-  for(var i=0;i<25;i++){
+  // ═══ 3. Sparkles ═══
+  for(var i=0;i<30;i++){
     var seed=i*3571;
     var sx=(Math.sin(seed+t*0.5)*0.48+0.5)*w;
     var sy=(Math.cos(seed*1.7+t*0.35)*0.45+0.5)*h;
-    var sa=0.15+Math.sin(t*3+seed)*0.12;
+    var sa=0.12+Math.sin(t*3+seed)*0.1;
     var sr=1.5+Math.sin(t*2+seed)*0.8;
     ctx.beginPath();ctx.arc(sx,sy,sr,0,6.28);
     ctx.fillStyle="rgba(180,230,255,"+sa+")";ctx.fill();
   }
 
-  // ── 3. Active lyric — smooth per-char highlight ──
+  // ═══ 4. Active lyric — smooth per-char highlight ═══
   if(ci<0||ci>=allLines.length)return;
   var curLine=allLines[ci];
   var lineStart=curLine.time;
@@ -383,64 +422,64 @@ function drawIL(){
 
   var text=curLine.text;
   var fontSize=Math.min(68,Math.max(32,w/(text.length*0.55)));
-  ctx.save();
-  ctx.font="700 "+fontSize+"px -apple-system,'PingFang SC',sans-serif";
+  ctx.save();ctx.font="700 "+fontSize+"px -apple-system,'PingFang SC',sans-serif";
   ctx.textAlign="center";ctx.textBaseline="middle";
-
-  var chars=text.split("");
-  var widths=[];var totalW=0;
+  var chars=text.split("");var widths=[];var totalW=0;
   for(var i=0;i<chars.length;i++){var cw=ctx.measureText(chars[i]).width;widths.push(cw);totalW+=cw}
-  var startX=(w-totalW)/2;
-  var x=startX;
-
+  var startX=(w-totalW)/2;var x=startX;
   for(var i=0;i<chars.length;i++){
-    // Wider smooth gradient: each char brightness based on distance from current position
-    var charPos=i/chars.length;
-    var diff=charProg-charPos;
-    // Bright range: 0.3 ahead, 0.1 behind (wider)
+    var diff=charProg-(i/chars.length);
     var brightness;
-    if(diff>=0){brightness=Math.max(0.2,1-diff*4)} // behind current: slow fade
-    else{brightness=Math.max(0.2,1+diff*3)} // ahead: slower fade
+    if(diff>=0)brightness=Math.max(0.15,1-diff*3);
+    else brightness=Math.max(0.15,1+diff*2.5);
     brightness=Math.min(1,brightness);
-    // Smoothstep for buttery transition
     brightness=brightness*brightness*(3-2*brightness);
-
     ctx.save();
-    // Color interpolation: dim blue → bright white-blue
-    var rr=Math.round(120+135*brightness);
-    var gg=Math.round(200+55*brightness);
+    var rr=Math.round(100+155*brightness);
+    var gg=Math.round(190+65*brightness);
     var bb=Math.round(255);
-    var aa=0.2+brightness*0.8;
-    ctx.fillStyle="rgba("+rr+","+gg+","+bb+","+aa+")";
+    ctx.fillStyle="rgba("+rr+","+gg+","+bb+","+(0.15+brightness*0.85)+")";
     ctx.shadowBlur=brightness*30;
     ctx.shadowColor="rgba(0,122,255,"+brightness*0.8+")";
     ctx.fillText(chars[i],x+widths[i]/2,h*.4);
-    ctx.restore();
-    x+=widths[i];
+    ctx.restore();x+=widths[i];
   }
   ctx.restore();
 
-  // ── 4. Translation ──
+  // ═══ 5. Translation — same per-char highlight ═══
   if(showTrans&&transLines.length){
     var trText=findTr(curLine.time);
     if(trText){
-      ctx.save();ctx.font="400 "+Math.min(20,Math.max(14,w/(trText.length*0.6)))+"px -apple-system,'PingFang SC',sans-serif";
+      var trFs=Math.min(22,Math.max(14,w/(trText.length*0.6)));
+      ctx.save();ctx.font="400 "+trFs+"px -apple-system,'PingFang SC',sans-serif";
       ctx.textAlign="center";ctx.textBaseline="middle";
-      ctx.fillStyle="rgba(255,255,255,.3)";
-      ctx.fillText(trText,w/2,h*.4+fontSize*.7);
+      var trChars=trText.split("");var trWidths=[];var trTotal=0;
+      for(var i=0;i<trChars.length;i++){var tw=ctx.measureText(trChars[i]).width;trWidths.push(tw);trTotal+=tw}
+      var trX=(w-trTotal)/2;
+      for(var i=0;i<trChars.length;i++){
+        var diff=charProg-(i/trChars.length);
+        var br;if(diff>=0)br=Math.max(0.1,1-diff*3);else br=Math.max(0.1,1+diff*2.5);
+        br=Math.min(1,br);br=br*br*(3-2*br);
+        ctx.save();
+        var rr=Math.round(100+155*br);
+        var gg=Math.round(180+75*br);
+        ctx.fillStyle="rgba("+rr+","+gg+",255,"+(0.1+br*0.6)+")";
+        ctx.shadowBlur=br*15;
+        ctx.shadowColor="rgba(0,122,255,"+br*0.5+")";
+        ctx.fillText(trChars[i],trX+trWidths[i]/2,h*.4+fontSize*.7);
+        ctx.restore();trX+=trWidths[i];
+      }
       ctx.restore();
     }
   }
 
-  // ── 5. Next line preview ──
+  // ═══ 6. Next line preview ═══
   if(ci+1<allLines.length){
     var nx=allLines[ci+1];
     ctx.save();ctx.font="400 "+Math.min(18,Math.max(13,w/(nx.text.length*0.7)))+"px -apple-system,'PingFang SC',sans-serif";
     ctx.textAlign="center";ctx.textBaseline="middle";
-    ctx.globalAlpha=0.2;
-    ctx.fillStyle="rgba(168,246,255,0.6)";
-    ctx.fillText(nx.text,w/2,h*.75);
-    ctx.restore();
+    ctx.globalAlpha=0.15;ctx.fillStyle="rgba(168,246,255,0.5)";
+    ctx.fillText(nx.text,w/2,h*.75);ctx.restore();
   }
 }
 
