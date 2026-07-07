@@ -1048,43 +1048,49 @@ function updateProgress(){if(!audio.duration)return;if(isDragging)return;var p=(
 var audioCtx,analyser,freqData,waveformInited=false;
 function initWaveform(){if(waveformInited)return;try{audioCtx=new(window.AudioContext||window.webkitAudioContext)();audioCtx.resume();analyser=audioCtx.createAnalyser();analyser.fftSize=256;analyser.smoothingTimeConstant=0.8;var src=audioCtx.createMediaElementSource(audio);src.connect(analyser);analyser.connect(audioCtx.destination);freqData=new Uint8Array(analyser.frequencyBinCount);waveformInited=true;initILCanvas();initMainWaveform();}catch(e){}}
 
-// ═══ MAIN PAGE WAVEFORM ═══
+// ═══ MAIN PAGE WAVEFORM（全宽竖条可视化器，像QQ音乐）═══
 var mainWaveCanvas,mainWaveCtx;
 function initMainWaveform(){mainWaveCanvas=$("mainWaveform");if(mainWaveCanvas)mainWaveCtx=mainWaveCanvas.getContext("2d");}
 function drawMainWaveform(){
   if(!mainWaveCanvas)return;
   if(!mainWaveCtx)mainWaveCtx=mainWaveCanvas.getContext("2d");
-  var w=mainWaveCanvas.width=mainWaveCanvas.clientWidth||window.innerWidth;
+  var w=mainWaveCanvas.width=window.innerWidth;
   var h=mainWaveCanvas.height=70;
   if(w<10)return;
   var ctx=mainWaveCtx;ctx.clearRect(0,0,w,h);
   var t=Date.now()*0.001;
   var hasAudio=analyser&&freqData;
-  var pts=100,samples=[];
-  if(hasAudio){
-    analyser.getByteFrequencyData(freqData);
-    var step=Math.floor(freqData.length/pts);
-    for(var i=0;i<pts;i++){var s=0;for(var j=0;j<step;j++)s+=freqData[i*step+j];samples.push(s/step/255);}
-  }else{
-    for(var i=0;i<pts;i++)samples.push(0.04+Math.sin(i*0.12+t*1.2)*0.025);
+  var barCount=120;
+  var barW=w/barCount;
+  var barGap=2;
+  if(hasAudio)analyser.getByteFrequencyData(freqData);
+  for(var i=0;i<barCount;i++){
+    var fv=0;
+    if(hasAudio){
+      var fi=Math.floor((i/barCount)*freqData.length*0.7);
+      fv=freqData[fi]/255;
+    }else{
+      fv=0.05+Math.sin(i*0.15+t*1.5)*0.03+Math.sin(i*0.08+t*0.8)*0.02;
+    }
+    var barH=Math.max(2,fv*h*0.85);
+    var x=i*barW+barGap/2;
+    var y=h-barH;
+    // 渐变色柱子
+    var grad=ctx.createLinearGradient(x,h,x,y);
+    grad.addColorStop(0,"rgba(0,122,255,0.1)");
+    grad.addColorStop(0.4,"rgba(0,122,255,0.6)");
+    grad.addColorStop(0.7,"rgba(64,156,255,0.8)");
+    grad.addColorStop(1,"rgba(100,200,255,0.9)");
+    ctx.fillStyle=grad;
+    ctx.fillRect(x,y,barW-barGap,barH);
+    // 顶部发光点
+    if(fv>0.1){
+      ctx.beginPath();ctx.arc(x+(barW-barGap)/2,y,2,0,6.28);
+      ctx.fillStyle="rgba(150,220,255,"+fv*0.8+")";
+      ctx.shadowBlur=6;ctx.shadowColor="rgba(0,122,255,0.5)";
+      ctx.fill();ctx.shadowBlur=0;
+    }
   }
-  // 绘制3层波形（更粗更亮）
-  var layers=[
-    {blur:15,alpha:hasAudio?0.5:0.15,width:3,yOff:0},
-    {blur:8,alpha:hasAudio?0.65:0.2,width:2,yOff:-1},
-    {blur:3,alpha:hasAudio?0.9:0.3,width:1.2,yOff:-2}
-  ];
-  for(var l=0;l<layers.length;l++){var L=layers[l];
-    ctx.save();ctx.beginPath();ctx.lineWidth=L.width;ctx.lineJoin="round";ctx.lineCap="round";
-    ctx.globalAlpha=L.alpha;ctx.shadowBlur=L.blur;ctx.shadowColor="rgba(0,122,255,0.6)";
-    var grad=ctx.createLinearGradient(0,0,w,0);
-    grad.addColorStop(0,"rgba(0,122,255,0)");grad.addColorStop(0.15,"rgba(0,122,255,0.5)");
-    grad.addColorStop(0.35,"rgba(64,156,255,0.8)");grad.addColorStop(0.5,"rgba(100,180,255,1)");
-    grad.addColorStop(0.65,"rgba(64,156,255,0.8)");grad.addColorStop(0.85,"rgba(0,122,255,0.5)");
-    grad.addColorStop(1,"rgba(0,122,255,0)");ctx.strokeStyle=grad;
-    var sw=w/(pts-1),baseY=h-3,amp=(h-6)*0.5;
-    for(var i=0;i<pts;i++){var x=i*sw,y=baseY-samples[i]*amp+L.yOff;if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);}
-    ctx.stroke();ctx.restore();}
 }
 // ═══ FULLSCREEN LYRICS CANVAS ═══
 var ilCanvasCtx,ilCanvas;
