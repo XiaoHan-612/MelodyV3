@@ -2579,29 +2579,43 @@ function updateVolumeIcon() {
 // ═══════════════════════════════════════════════
 
 var isDragging = false;
+var seekRAF = null;
+var pendingSeekPercent = null;
 
 function onProgressMouseDown(e) {
   isDragging = true;
-  seekTo(e);
+  pendingSeekPercent = getSeekPercent(e);
+  applySeek();
 }
 
 function onProgressMouseMove(e) {
   if (!isDragging) return;
-  seekTo(e);
+  pendingSeekPercent = getSeekPercent(e);
 }
 
 function onProgressMouseUp() {
+  if (isDragging && pendingSeekPercent !== null) {
+    applySeek();
+  }
   isDragging = false;
+  pendingSeekPercent = null;
+  if (seekRAF) { cancelAnimationFrame(seekRAF); seekRAF = null; }
 }
 
-function seekTo(e) {
+function getSeekPercent(e) {
   var bar = $("progressBar");
   var rect = bar.getBoundingClientRect();
-  var percent = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+  return Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+}
 
-  if (audio.duration) {
-    audio.currentTime = percent * audio.duration;
-  }
+function applySeek() {
+  if (seekRAF) return;
+  seekRAF = requestAnimationFrame(function() {
+    seekRAF = null;
+    if (pendingSeekPercent !== null && audio.duration) {
+      audio.currentTime = pendingSeekPercent * audio.duration;
+    }
+  });
 }
 
 // ═══════════════════════════════════════════════
@@ -2968,28 +2982,31 @@ function toggleMiniMode() {
 
   if (isMiniMode) {
     app.style.display = "none";
-    playerBar.style.borderTop = "none";
-    document.body.style.height = "auto";
-    document.body.style.minHeight = "80px";
-    document.body.style.maxHeight = "80px";
-    document.body.style.overflow = "hidden";
     playerBar.style.position = "fixed";
     playerBar.style.bottom = "0";
     playerBar.style.left = "0";
     playerBar.style.right = "0";
-    // 尝试调整窗口大小（WebView2环境）
+    playerBar.style.top = "0";
+    playerBar.style.zIndex = "100";
+    playerBar.style.borderTop = "none";
+    playerBar.style.display = "flex";
+    playerBar.style.flexDirection = "column";
+    // 隐藏进度条上方的空间，让内容更紧凑
+    var progressBar = playerBar.querySelector(".progress-bar");
+    if (progressBar) progressBar.style.display = "none";
     toast("迷你模式");
   } else {
     app.style.display = "flex";
-    playerBar.style.borderTop = "";
-    document.body.style.height = "";
-    document.body.style.minHeight = "";
-    document.body.style.maxHeight = "";
-    document.body.style.overflow = "";
     playerBar.style.position = "";
     playerBar.style.bottom = "";
     playerBar.style.left = "";
     playerBar.style.right = "";
+    playerBar.style.top = "";
+    playerBar.style.zIndex = "";
+    playerBar.style.borderTop = "";
+    playerBar.style.flexDirection = "";
+    var progressBar = playerBar.querySelector(".progress-bar");
+    if (progressBar) progressBar.style.display = "";
     toast("完整模式");
   }
 }
