@@ -330,65 +330,63 @@ function drawIL(){
   var t=Date.now()*.001;
   ctx.clearRect(0,0,w,h);
 
-  // 1. Background gradient
+  // Background
   var g=ctx.createRadialGradient(w/2,h*.4,0,w/2,h*.4,Math.max(w,h)*.6);
-  g.addColorStop(0,"rgba(10,20,45,.4)");g.addColorStop(1,"rgba(6,10,20,.1)");
+  g.addColorStop(0,"rgba(10,20,45,.35)");g.addColorStop(1,"rgba(6,10,20,.08)");
   ctx.fillStyle=g;ctx.fillRect(0,0,w,h);
 
   if(!S.lines.length)return;
-
-  // 2. Background lyrics (scattered like stars, blurred, twinkling)
   var allLines=S.lines;
   var ci=S.lyricIdx;
+
+  // 1. Background lyrics — like stars, varied size/brightness
   for(var i=0;i<allLines.length;i++){
-    if(Math.abs(i-ci)<2)continue; // skip near current
-    // Position: pseudo-random but stable per line
+    if(ci>=0&&Math.abs(i-ci)<=1)continue;
     var seed=i*7919;
-    var px=(Math.sin(seed)*0.4+0.5)*w;
-    var py=(Math.cos(seed*1.3)*0.35+0.5)*h;
-    // Distance from current: fade out
-    var dist=Math.abs(i-ci);
-    var maxDist=Math.min(allLines.length,8);
-    var fade=Math.max(0,1-dist/maxDist);
-    // Twinkle
-    var twinkle=0.5+Math.sin(t*1.5+seed)*0.3;
-    var alpha=fade*0.18*twinkle;
-    if(alpha<0.02)continue;
-    var fs=Math.min(20,Math.max(12,w/(allLines[i].text.length*0.9)));
+    var px=(Math.sin(seed)*0.42+0.5)*w;
+    var py=(Math.cos(seed*1.3)*0.38+0.5)*h;
+    var dist=ci>=0?Math.abs(i-ci):3;
+    var fade=Math.max(0,1-dist/7);
+    var twinkle=0.6+Math.sin(t*1.8+seed)*0.4;
+    var alpha=fade*0.35*twinkle;
+    if(alpha<0.01)continue;
+    // Random size per star
+    var sizeSeed=(seed*13)%1;
+    var fs=14+sizeSeed*14;
     ctx.save();
-    ctx.font="400 "+fs+"px -apple-system,'PingFang SC',sans-serif";
+    ctx.font=(sizeSeed>0.5?"600 ":"400 ")+fs+"px -apple-system,'PingFang SC',sans-serif";
     ctx.textAlign="center";ctx.textBaseline="middle";
     ctx.globalAlpha=alpha;
-    ctx.fillStyle="rgba(143,233,255,0.6)";
-    ctx.filter="blur(2px)";
+    ctx.fillStyle="rgba(168,246,255,0.7)";
+    ctx.shadowBlur=8;ctx.shadowColor="rgba(10,132,255,"+alpha*0.5+")";
     ctx.fillText(allLines[i].text,px,py);
-    ctx.restore();
+    ctx.shadowBlur=0;ctx.restore();
   }
 
-  // 3. Decorative sparkles
-  for(var i=0;i<15;i++){
+  // 2. Decorative sparkles
+  for(var i=0;i<20;i++){
     var seed=i*3571;
-    var sx=(Math.sin(seed+t*0.3)*0.45+0.5)*w;
-    var sy=(Math.cos(seed*1.7+t*0.2)*0.4+0.5)*h;
-    var sa=0.1+Math.sin(t*2+seed)*0.08;
-    var sr=1+Math.sin(t*1.5+seed)*0.5;
+    var sx=(Math.sin(seed+t*0.4)*0.48+0.5)*w;
+    var sy=(Math.cos(seed*1.7+t*0.3)*0.45+0.5)*h;
+    var sa=0.12+Math.sin(t*2.5+seed)*0.1;
+    var sr=1.2+Math.sin(t*2+seed)*0.6;
     ctx.beginPath();ctx.arc(sx,sy,sr,0,6.28);
     ctx.fillStyle="rgba(143,233,255,"+sa+")";ctx.fill();
   }
 
-  // 4. Active lyric (centered, per-char highlight)
+  // 3. Active lyric — centered, per-char with SMOOTH transition
   if(ci<0||ci>=allLines.length)return;
   var curLine=allLines[ci];
   var lineStart=curLine.time;
   var nextLine=allLines[ci+1];
   var lineEnd=nextLine?nextLine.time:(audio.duration||lineStart+5);
   var lineDur=lineEnd-lineStart;
+  // charProg: 0~1, how far through the line
   var charProg=0;
   if(lineDur>0)charProg=Math.max(0,Math.min(1,(audio.currentTime-S.lyricOff-lineStart)/lineDur));
 
-  // Draw active lyric text with per-character coloring
   var text=curLine.text;
-  var fontSize=Math.min(72,Math.max(30,w/(text.length*0.65)));
+  var fontSize=Math.min(72,Math.max(28,w/(text.length*0.6)));
   ctx.save();
   ctx.font="700 "+fontSize+"px -apple-system,'PingFang SC',sans-serif";
   ctx.textAlign="center";ctx.textBaseline="middle";
@@ -397,48 +395,49 @@ function drawIL(){
   var widths=[];var totalW=0;
   for(var i=0;i<chars.length;i++){var cw=ctx.measureText(chars[i]).width;widths.push(cw);totalW+=cw}
   var startX=(w-totalW)/2;
-  var charIdx=Math.floor(charProg*chars.length);
   var x=startX;
 
   for(var i=0;i<chars.length;i++){
-    var played=i<=charIdx;
+    // Smooth: each char has a transition zone around charProg
+    var charCenter=(i+0.5)/chars.length;
+    var dist=Math.abs(charProg-charCenter);
+    // Brightness: 1 at current position, fading to 0.15 away
+    var brightness=Math.max(0.15,1-dist*4);
+    brightness=Math.min(1,brightness);
+
     ctx.save();
-    if(played){
-      // Played: bright with blue glow
-      ctx.fillStyle="#f0faff";
-      ctx.shadowColor="rgba(10,132,255,.9)";
-      ctx.shadowBlur=25;
-    }else{
-      // Not played: dim
-      ctx.fillStyle="rgba(168,246,255,.18)";
-      ctx.shadowBlur=0;
-    }
+    var r=Math.round(168+(240-168)*brightness);
+    var g=Math.round(246+(250-246)*brightness);
+    var b=Math.round(255+(255-255)*brightness);
+    ctx.fillStyle="rgba("+r+","+g+","+b+","+(0.18+brightness*0.82)+")";
+    ctx.shadowBlur=brightness*20;
+    ctx.shadowColor="rgba(10,132,255,"+brightness*0.6+")";
     ctx.fillText(chars[i],x+widths[i]/2,h*.42);
     ctx.restore();
     x+=widths[i];
   }
   ctx.restore();
 
-  // 5. Translation below
+  // 4. Translation
   if(showTrans&&transLines.length&&ci>=0){
     var trText=findTr(curLine.time);
     if(trText){
-      var trFs=Math.min(24,Math.max(14,w/(trText.length*0.7)));
+      var trFs=Math.min(22,Math.max(14,w/(trText.length*0.65)));
       ctx.save();ctx.font="400 "+trFs+"px -apple-system,'PingFang SC',sans-serif";
       ctx.textAlign="center";ctx.textBaseline="middle";
       ctx.fillStyle="rgba(255,255,255,.35)";
-      ctx.fillText(trText,w/2,h*.42+fontSize*.8);
+      ctx.fillText(trText,w/2,h*.42+fontSize*.75);
       ctx.restore();
     }
   }
 
-  // 6. Next line preview
+  // 5. Next line preview
   if(ci+1<allLines.length){
     var nx=allLines[ci+1];
-    var nxFs=Math.min(18,Math.max(12,w/(nx.text.length*0.8)));
+    var nxFs=Math.min(18,Math.max(12,w/(nx.text.length*0.7)));
     ctx.save();ctx.font="400 "+nxFs+"px -apple-system,'PingFang SC',sans-serif";
     ctx.textAlign="center";ctx.textBaseline="middle";
-    ctx.globalAlpha=0.15;
+    ctx.globalAlpha=0.18;
     ctx.fillStyle="rgba(168,246,255,0.5)";
     ctx.fillText(nx.text,w/2,h*.78);
     ctx.restore();
