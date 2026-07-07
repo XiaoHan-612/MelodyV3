@@ -2101,6 +2101,8 @@ function updatePageInfo(title, sub) {
 
 function updateProgress() {
   if (!audio.duration) return;
+  // 拖拽中不更新，避免覆盖拖拽位置
+  if (isDragging) return;
 
   var percent = (audio.currentTime / audio.duration) * 100;
   $("progressFill").style.width = percent + "%";
@@ -2572,26 +2574,33 @@ var isDragging = false;
 
 function onProgressMouseDown(e) {
   isDragging = true;
-  seekTo(e);
+  updateDragVisual(e);
 }
 
 function onProgressMouseMove(e) {
   if (!isDragging) return;
-  seekTo(e);
+  updateDragVisual(e);
 }
 
-function onProgressMouseUp() {
+function onProgressMouseUp(e) {
+  if (!isDragging) return;
   isDragging = false;
-}
-
-function seekTo(e) {
+  // 松手时才真正 seek
   var bar = $("progressBar");
   var rect = bar.getBoundingClientRect();
   var percent = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-
   if (audio.duration) {
     audio.currentTime = percent * audio.duration;
   }
+}
+
+function updateDragVisual(e) {
+  var bar = $("progressBar");
+  var rect = bar.getBoundingClientRect();
+  var percent = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+  // 只更新视觉，不动 audio.currentTime
+  $("progressFill").style.width = (percent * 100) + "%";
+  $("timeDisplay").textContent = formatTime(percent * (audio.duration || 0)) + " / " + formatTime(audio.duration);
 }
 
 // ═══════════════════════════════════════════════
