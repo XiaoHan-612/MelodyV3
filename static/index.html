@@ -14,6 +14,7 @@
   --glass-bg:linear-gradient(135deg,rgba(20,26,40,.72),rgba(12,16,28,.78));
   --glass-border:rgba(0,122,255,.2);
   --glass-shadow:inset 0 0 2px 1px rgba(255,255,255,.2),inset 0 0 8px 3px rgba(255,255,255,.06),0 16px 48px rgba(0,0,0,.35);
+  --accent-bg2:rgba(0,122,255,.12);
   --spring:cubic-bezier(.16,1,.3,1); --bounce:cubic-bezier(.34,1.56,.64,1); --smooth:cubic-bezier(.25,.1,.25,1);
 }
 [data-theme="light"] {
@@ -24,6 +25,7 @@
   --glass-bg:linear-gradient(135deg,rgba(255,255,255,.82),rgba(245,245,247,.78));
   --glass-border:rgba(0,122,255,.15);
   --glass-shadow:inset 0 0 2px 1px rgba(255,255,255,.5),inset 0 0 8px 3px rgba(255,255,255,.15),0 16px 48px rgba(0,0,0,.08);
+  --accent-bg2:rgba(0,122,255,.1);
 }
 *{margin:0;padding:0;box-sizing:border-box}
 html,body{height:100%;overflow:hidden}
@@ -135,7 +137,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 .il-action-btn:hover{background:rgba(255,255,255,.12);color:#fff}
 .il-action-btn.active{background:var(--accent);color:#fff}
 
-/* Mineradio 风格歌词文字 */
 .il-body{position:relative;z-index:2;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:0 5%}
 .il-canvas{position:absolute;inset:0;pointer-events:none;z-index:1}
 .il-lyric-line{
@@ -144,18 +145,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
   -webkit-background-clip:text;-webkit-text-fill-color:transparent;
   filter:drop-shadow(0 4px 22px rgba(143,233,255,.3));
   max-width:85%;margin:0 auto;
-  transition:all .6s var(--spring);
+  opacity:0;transform:translateY(20px) scale(.95);
+  transition:opacity .6s cubic-bezier(.16,1,.3,1),transform .6s cubic-bezier(.16,1,.3,1);
 }
-.il-lyric-line.entering{animation:lyricIn .9s cubic-bezier(.16,.84,.32,1.02) both}
-@keyframes lyricIn{
-  0%{opacity:0;transform:perspective(800px) translateZ(-40px) rotateX(8deg);filter:blur(12px) drop-shadow(0 4px 22px rgba(143,233,255,0))}
-  100%{opacity:1;transform:perspective(800px) translateZ(0) rotateX(0);filter:drop-shadow(0 4px 22px rgba(143,233,255,.3))}
-}
-@keyframes lyricOut{
-  0%{opacity:1;transform:perspective(800px) translateZ(0) rotateX(0)}
-  100%{opacity:0;transform:perspective(800px) translateZ(30px) rotateX(-5deg);filter:blur(8px)}
-}
-.il-translation{font-size:clamp(16px,2.5vw,24px);color:rgba(255,255,255,.4);margin-top:12px;font-weight:400;transition:all .5s var(--spring)}
+.il-lyric-line.visible{opacity:1;transform:translateY(0) scale(1)}
+.il-translation{font-size:clamp(16px,2.5vw,24px);color:rgba(255,255,255,.4);margin-top:12px;font-weight:400;opacity:0;transition:opacity .5s .2s}
+.il-translation.visible{opacity:1}
 .il-next{position:absolute;bottom:15%;left:50%;transform:translateX(-50%);font-size:16px;color:rgba(255,255,255,.15);max-width:70%;text-align:center}
 
 .il-controls{position:relative;z-index:3;flex-shrink:0;padding:12px 10% 28px;display:flex;flex-direction:column;align-items:center;gap:12px}
@@ -312,7 +307,7 @@ function renderLrc(){var b=$("lyricBody");if(!S.lines.length){showLrcEmpty();ret
 function findTr(time){var best=null,bd=Infinity;for(var i=0;i<transLines.length;i++){var d=Math.abs(transLines[i].time-time);if(d<bd&&d<1){bd=d;best=transLines[i].text}}return best}
 function showLrcEmpty(){$("lyricBody").innerHTML='<div class="lyric-empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 6h16M4 12h12M4 18h8"/></svg><span>暂无歌词</span></div>'}
 function updateLrc(time){var adj=time-S.lyricOff,idx=-1;for(var i=0;i<S.lines.length;i++){if(S.lines[i].time<=adj)idx=i;else break}if(idx===S.lyricIdx)return;S.lyricIdx=idx;document.querySelectorAll("#lyricBody .lyric-line").forEach(function(el,i){el.classList.toggle("active",i===idx)});if(idx>=0){var el=document.querySelector("#lyricBody .lyric-line[data-index='"+idx+"']");if(el)el.scrollIntoView({behavior:"smooth",block:"center"})}renderIL()}
-function renderIL(){var cl=$("ilText"),tl=$("ilTitle"),al=$("ilArtist"),tr=$("ilTrans"),nx=$("ilNext");if(S.song){tl.textContent=S.song.title;al.textContent=S.song.artist}if(S.lyricIdx>=0&&S.lines[S.lyricIdx]){cl.textContent=S.lines[S.lyricIdx].text;cl.classList.remove("entering");void cl.offsetWidth;cl.classList.add("entering");cl.style.opacity="1";if(showTrans&&transLines.length){var tt=findTr(S.lines[S.lyricIdx].time);if(tr&&tt){tr.textContent=tt;tr.style.display="block"}else if(tr){tr.style.display="none"}}else if(tr){tr.style.display="none"}var ni=S.lyricIdx+1;if(nx)nx.textContent=(ni<S.lines.length)?S.lines[ni].text:""}else if(cl){cl.textContent="等待播放...";cl.style.opacity=".3";if(tr)tr.style.display="none";if(nx)nx.textContent=""}}
+function renderIL(){var cl=$("ilText"),tl=$("ilTitle"),al=$("ilArtist"),tr=$("ilTrans"),nx=$("ilNext");if(S.song){tl.textContent=S.song.title;al.textContent=S.song.artist}if(S.lyricIdx>=0&&S.lines[S.lyricIdx]){cl.textContent=S.lines[S.lyricIdx].text;cl.classList.remove("visible");void cl.offsetWidth;cl.classList.add("visible");if(showTrans&&transLines.length){var tt=findTr(S.lines[S.lyricIdx].time);if(tr&&tt){tr.textContent=tt;tr.classList.add("visible")}else if(tr){tr.classList.remove("visible")}}else if(tr){tr.classList.remove("visible")}var ni=S.lyricIdx+1;if(nx)nx.textContent=(ni<S.lines.length)?S.lines[ni].text:""}else if(cl){cl.textContent="等待播放...";cl.classList.remove("visible");if(tr)tr.classList.remove("visible");if(nx)nx.textContent=""}}
 function toggleTrans(){showTrans=!showTrans;renderLrc();var b=$("btnTranslation"),bf=$("ilTransBtn");if(b)b.style.color=showTrans?"var(--accent)":"";if(bf)bf.classList.toggle("active",showTrans);toast(showTrans?"显示翻译":"隐藏翻译")}
 function adjustOff(d){S.lyricOff+=d;var ds=$("lyricOffsetDisplay");if(ds)ds.textContent=S.lyricOff.toFixed(1)+"s";toast("歌词偏移: "+S.lyricOff.toFixed(1)+"s")}
 
