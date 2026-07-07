@@ -1376,12 +1376,6 @@ body {
           <line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>
         </svg>
       </button>
-      <button class="ctrl-btn" id="btnMini" onclick="App.toggleMiniMode()" title="迷你模式">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-          <polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/>
-          <line x1="14" y1="10" x2="21" y2="3"/><line x1="3" y1="21" x2="10" y2="14"/>
-        </svg>
-      </button>
       <span class="speed-badge" id="speedBadge" onclick="App.toggleSpeedMenu()">1x</span>
       <div class="volume-wrap">
         <span class="volume-icon" id="volumeIcon" onclick="App.toggleMute()">
@@ -2575,43 +2569,29 @@ function updateVolumeIcon() {
 // ═══════════════════════════════════════════════
 
 var isDragging = false;
-var seekRAF = null;
-var pendingSeekPercent = null;
 
 function onProgressMouseDown(e) {
   isDragging = true;
-  pendingSeekPercent = getSeekPercent(e);
-  applySeek();
+  seekTo(e);
 }
 
 function onProgressMouseMove(e) {
   if (!isDragging) return;
-  pendingSeekPercent = getSeekPercent(e);
+  seekTo(e);
 }
 
 function onProgressMouseUp() {
-  if (isDragging && pendingSeekPercent !== null) {
-    applySeek();
-  }
   isDragging = false;
-  pendingSeekPercent = null;
-  if (seekRAF) { cancelAnimationFrame(seekRAF); seekRAF = null; }
 }
 
-function getSeekPercent(e) {
+function seekTo(e) {
   var bar = $("progressBar");
   var rect = bar.getBoundingClientRect();
-  return Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-}
+  var percent = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
 
-function applySeek() {
-  if (seekRAF) return;
-  seekRAF = requestAnimationFrame(function() {
-    seekRAF = null;
-    if (pendingSeekPercent !== null && audio.duration) {
-      audio.currentTime = pendingSeekPercent * audio.duration;
-    }
-  });
+  if (audio.duration) {
+    audio.currentTime = percent * audio.duration;
+  }
 }
 
 // ═══════════════════════════════════════════════
@@ -2967,52 +2947,6 @@ function searchFromHistory(keyword) {
 
 // ═══════════════════════════════════════════════
 // 迷你模式
-// ═══════════════════════════════════════════════
-
-var isMiniMode = false;
-
-function toggleMiniMode() {
-  isMiniMode = !isMiniMode;
-  var app = document.querySelector(".app");
-  var sidebar = document.querySelector(".sidebar");
-  var content = document.querySelector(".content");
-  var lyricPanel = document.getElementById("lyricPanel");
-  var waveBg = document.getElementById("waveformBg");
-  var playerBar = document.querySelector(".player-bar");
-
-  if (isMiniMode) {
-    if (sidebar) sidebar.style.display = "none";
-    if (content) content.style.display = "none";
-    if (lyricPanel) lyricPanel.style.display = "none";
-    if (waveBg) waveBg.style.display = "none";
-    // 进度条保持可见，播放栏居中显示
-    if (playerBar) {
-      playerBar.style.flex = "1";
-      playerBar.style.alignItems = "center";
-    }
-    // 封面加大
-    var cover = document.querySelector(".song-cover");
-    var ph = document.getElementById("coverPlaceholder");
-    if (cover) { cover.style.width = "64px"; cover.style.height = "64px"; cover.style.borderRadius = "10px"; }
-    if (ph) { ph.style.width = "64px"; ph.style.height = "64px"; ph.style.borderRadius = "10px"; }
-    toast("迷你模式");
-  } else {
-    if (sidebar) sidebar.style.display = "";
-    if (content) content.style.display = "";
-    if (lyricPanel) lyricPanel.style.display = state.lyricVisible ? "flex" : "none";
-    if (waveBg) waveBg.style.display = "";
-    if (playerBar) {
-      playerBar.style.flex = "";
-      playerBar.style.alignItems = "";
-    }
-    var cover = document.querySelector(".song-cover");
-    var ph = document.getElementById("coverPlaceholder");
-    if (cover) { cover.style.width = ""; cover.style.height = ""; cover.style.borderRadius = ""; }
-    if (ph) { ph.style.width = ""; ph.style.height = ""; ph.style.borderRadius = ""; }
-    toast("完整模式");
-  }
-}
-
 // ═══════════════════════════════════════════════
 // 歌词翻译显示
 // ═══════════════════════════════════════════════
@@ -3385,7 +3319,6 @@ window.App = {
   closeLyricFullscreen: closeLyricFullscreen,
   adjustLyricOffset: adjustLyricOffset,
   toggleTheme: toggleTheme,
-  toggleMiniMode: toggleMiniMode,
   toggleTranslation: toggleTranslation,
   showPlayQueue: showPlayQueue,
   removeFromQueue: removeFromQueue,
