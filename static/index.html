@@ -970,44 +970,28 @@ function addToRecent(song){state.recent=state.recent.filter(function(s){return!(
 function renderTrackList(songs,listType) {
   var c=$("trackList");
   if(!songs||!songs.length){showEmptyState();return;}
-  var html="";
-  if(state.viewMode==="grid"){
-    html='<div class="track-grid">';
-    songs.forEach(function(s,i){
-      var playing=state.currentSong&&state.currentSong.id===s.id&&state.currentSong.source===s.source;
-      html+='<div class="track-card'+(playing?' playing':'')+'" data-index="'+i+'" data-type="'+listType+'">';
-      html+='<div class="cover-wrap">';
-      if(s.cover)html+='<img src="'+s.cover+'" onerror="this.style.display=\'none\'">';
-      html+='<div class="cover-play"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></div>';
-      html+='</div>';
-      html+='<div class="title">'+escapeHtml(s.title)+'</div>';
-      html+='<div class="artist">'+escapeHtml(s.artist)+'</div>';
-      html+='<div class="meta-row"><span class="source-tag">'+SOURCE_LABELS[s.source]+'</span>';
-      if(s.duration)html+='<span class="duration">'+formatTime(s.duration)+'</span>';
-      html+='</div></div>';
-    });
-    html+='</div>';
-  } else {
-    html='<div class="track-grid">';
-    songs.forEach(function(s,i){
-      var playing=state.currentSong&&state.currentSong.id===s.id&&state.currentSong.source===s.source;
-      html+='<div class="track-card'+(playing?' playing':'')+'" data-index="'+i+'" data-type="'+listType+'">';
-      html+='<div class="cover-wrap">';
-      if(s.cover)html+='<img src="'+s.cover+'" onerror="this.style.display=\'none\'">';
-      html+='</div>';
-      html+='<div class="track-info"><div class="title">'+escapeHtml(s.title)+'</div><div class="artist">'+escapeHtml(s.artist)+'</div></div>';
-      html+='<div class="track-extra"><span class="source-tag">'+SOURCE_LABELS[s.source]+'</span>';
-      if(s.duration)html+='<span class="duration">'+formatTime(s.duration)+'</span>';
-      html+='</div></div>';
-    });
-    html+='</div>';
-  }
+  var html='<table style="width:100%;border-collapse:collapse">';
+  html+='<thead><tr style="border-bottom:1px solid var(--border)"><th style="text-align:left;padding:8px 12px;font-size:11px;color:var(--text3);font-weight:600;width:40px">#</th><th style="text-align:left;padding:8px 0;font-size:11px;color:var(--text3);font-weight:600">歌曲</th><th style="text-align:left;padding:8px 12px;font-size:11px;color:var(--text3);font-weight:600;width:80px">来源</th><th style="text-align:right;padding:8px 12px;font-size:11px;color:var(--text3);font-weight:600;width:60px">时长</th></tr></thead><tbody>';
+  songs.forEach(function(s,i){
+    var playing=state.currentSong&&state.currentSong.id===s.id&&state.currentSong.source===s.source;
+    var bg=playing?'background:var(--accent-bg)':'';
+    html+='<tr class="track-row" data-index="'+i+'" data-type="'+listType+'" style="cursor:pointer;border-bottom:1px solid var(--border);'+bg+'" onmouseover="this.style.background=\'var(--hover)\'" onmouseout="this.style.background=\''+(playing?'var(--accent-bg)':'')+'\'">';
+    html+='<td style="padding:10px 12px;font-size:12px;color:var(--text3);'+(playing?'color:var(--accent)':'')+'">'+(playing?'▶':i+1)+'</td>';
+    html+='<td style="padding:10px 0"><div style="font-size:14px;font-weight:500;'+(playing?'color:var(--accent)':'')+'">'+escapeHtml(s.title)+'</div><div style="font-size:12px;color:var(--text2);margin-top:2px">'+escapeHtml(s.artist)+'</div></td>';
+    html+='<td style="padding:10px 12px"><span class="source-tag">'+SOURCE_LABELS[s.source]+'</span></td>';
+    html+='<td style="padding:10px 12px;text-align:right;font-size:12px;color:var(--text3)">'+(s.duration?formatTime(s.duration):'')+'</td>';
+    html+='</tr>';
+  });
+  html+='</tbody></table>';
   c.innerHTML=html;
-  c.className="track-list"+(state.viewMode==="list"?" list-mode":"");
-  // bind events
-  c.querySelectorAll(".track-card").forEach(function(el){
-    el.addEventListener("click",function(e){if(e.target.closest(".cover-play"))return;var idx=parseInt(el.dataset.index),type=el.dataset.type;var list=type==="search"?state.searchResults:type==="playlist"?state.playlist:type==="recent"?state.recent:[];if(list[idx])playSong(list[idx],idx,type);});
-    el.addEventListener("contextmenu",function(e){var idx=parseInt(el.dataset.index),type=el.dataset.type;var list=type==="search"?state.searchResults:type==="playlist"?state.playlist:type==="recent"?state.recent:[];if(list[idx])showContextMenu(e,list[idx],idx,type);});
+  c.className="track-list";
+  // bind click on rows
+  c.querySelectorAll(".track-row").forEach(function(el){
+    el.addEventListener("click",function(){
+      var idx=parseInt(el.dataset.index),type=el.dataset.type;
+      var list=type==="search"?state.searchResults:type==="playlist"?state.playlist:type==="recent"?state.recent:[];
+      if(list[idx])playSong(list[idx],idx,type);
+    });
   });
 }
 function showEmptyState(){$("trackList").innerHTML='<div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg><div class="text">搜索你喜欢的音乐</div><div class="subtext">支持酷狗、网易云、B站三个平台</div></div>';}
@@ -1103,7 +1087,7 @@ function toggleViewMode(){state.viewMode=state.viewMode==="grid"?"list":"grid";v
 function init(){
   initTheme();
   // toolbar
-  $("toolbar").innerHTML='<button class="tbtn view-toggle" onclick="App.toggleView()">网格</button>';
+  $("toolbar").innerHTML='';
 
   $("searchInput").addEventListener("input",function(e){clearTimeout(searchTimer);searchTimer=setTimeout(function(){if(state.currentTab==="search"){if(e.target.value.trim())search(e.target.value);else renderHistory();}},300);});
   $("searchInput").addEventListener("keydown",function(e){if(e.key==="Enter"&&e.target.value.trim()){addHistory(e.target.value.trim());search(e.target.value);}});
