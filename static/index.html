@@ -244,7 +244,7 @@ body {
 .main-waveform {
   position: fixed; bottom: 82px; left: 0; right: 0;
   height: 60px; pointer-events: none; z-index: 15;
-  opacity: .45;
+  opacity: .5; background: transparent;
 }
 
 .progress-bar {
@@ -1082,165 +1082,129 @@ function drawMainWaveform(){
       if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);}
     ctx.stroke();ctx.restore();}
 }
-// ═══ FULLSCREEN LYRICS CANVAS (全部用Canvas绘制) ═══
+// ═══ FULLSCREEN LYRICS CANVAS ═══
 var ilCanvasCtx,ilCanvas;
-var curParticles=[];
-var bgStars=[];
-var prevLyricIdx=-2;
-var PCOUNT=500;
-var CONVERGE=0.06;
-
-function initILCanvas(){ilCanvas=$("ilCanvas");if(ilCanvas){ilCanvasCtx=ilCanvas.getContext("2d");}}
-
-// 采样文字像素位置（用固定大小的采样画布）
+var curParticles=[],bgStars=[],prevLyricIdx=-2;
+var PCOUNT=800,CONVERGE=0.055;
+var sweepPos=0,sweepActive=false;
+function initILCanvas(){ilCanvas=$("ilCanvas");if(ilCanvas)ilCanvasCtx=ilCanvas.getContext("2d");}
 function getTextPositions(text){
-  var sw=800,sh=400;
-  var c=document.createElement("canvas"),ctx=c.getContext("2d");
-  c.width=sw;c.height=sh;
-  ctx.fillStyle="#000";ctx.fillRect(0,0,sw,sh);
-  var fs=Math.min(72,Math.max(24,Math.floor(sw/(text.length*1.2))));
-  ctx.fillStyle="#fff";
-  ctx.font="bold "+fs+"px sans-serif";
-  ctx.textAlign="center";ctx.textBaseline="middle";
-  ctx.fillText(text,sw/2,sh/2);
-  var imgData=ctx.getImageData(0,0,sw,sh).data;
-  var pts=[];
-  for(var y=0;y<sh;y+=3){for(var x=0;x<sw;x+=3){
-    var idx=(y*sw+x)*4;
-    if(imgData[idx]>200)pts.push({x:x,y:y});
-  }}
+  var sw=800,sh=280,c=document.createElement("canvas"),ctx=c.getContext("2d");
+  c.width=sw;c.height=sh;ctx.fillStyle="#000";ctx.fillRect(0,0,sw,sh);
+  var fs=Math.min(80,Math.max(30,Math.floor(sw/(text.length*1.1))));
+  ctx.fillStyle="#fff";ctx.font="900 "+fs+"px sans-serif";
+  ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText(text,sw/2,sh/2);
+  var d=ctx.getImageData(0,0,sw,sh).data,pts=[];
+  for(var y=0;y<sh;y+=2){for(var x=0;x<sw;x+=2){if(d[(y*sw+x)*4]>180)pts.push({x:x,y:y});}}
   return pts;
 }
-
-// 创建粒子
-function mkP(tx,ty,w,h){
-  var angle=Math.random()*Math.PI*2;
-  var dist=Math.max(w,h)*(0.4+Math.random()*0.6);
-  return{x:w/2+Math.cos(angle)*dist,y:h/2+Math.sin(angle)*dist,
-    tx:tx,ty:ty,vx:0,vy:0,r:Math.random()*2+0.8,
-    phase:Math.random()*6.28,arrived:false
-  };
-}
-
-// 将采样坐标映射到实际canvas坐标
 function mapPos(pts,w,h){
-  var sw=800,sh=400;
-  var sx=w/sw,sy=h/sh;
-  var scale=Math.min(sx,sy);
-  var ox=(w-sw*scale)/2;
-  var oy=(h-sh*scale)/2;
-  return pts.map(function(p){return{x:p.x*scale+ox,y:p.y*scale+oy};});
+  var sw=800,sh=280,sc=Math.min(w/sw,h/sh)*0.85;
+  var ox=(w-sw*sc)/2,oy=(h-sh*sc)/2;
+  return pts.map(function(p){return{x:p.x*sc+ox,y:p.y*sc+oy};});
 }
-
-// 更新背景星空
+function mkP(tx,ty,w,h){
+  var a=Math.random()*6.28,d=Math.max(w,h)*(0.3+Math.random()*0.7);
+  return{x:w/2+Math.cos(a)*d,y:h/2+Math.sin(a)*d,tx:tx,ty:ty,vx:0,vy:0,
+    r:Math.random()*3+1.2,phase:Math.random()*6.28,arrived:false,textPos:0};
+}
 function updateStars(w,h){
   bgStars=[];
-  var startIdx=Math.max(0,state.currentLyricIndex+1);
-  var future=[];
-  for(var i=startIdx;i<Math.min(startIdx+3,state.lyricLines.length);i++){
+  var cx=w/2,cy=h/2,future=[];
+  for(var i=Math.max(0,state.currentLyricIndex+1);i<Math.min(state.currentLyricIndex+5,state.lyricLines.length);i++)
     future.push(state.lyricLines[i].text);
-  }
   future.forEach(function(txt,fi){
-    var pts=getTextPositions(txt);
-    var mapped=mapPos(pts,w,h);
-    var offsetX=(fi%2)*w*0.4+w*0.05;
-    var offsetY=Math.floor(fi/2)*h*0.35+h*0.1;
-    var step=Math.max(1,Math.floor(mapped.length/50));
-    for(var i=0;i<mapped.length&&bgStars.length<150;i+=step){
-      bgStars.push({
-        x:mapped[i].x*0.5+offsetX,
-        y:mapped[i].y*0.5+offsetY,
-        r:Math.random()*1.2+0.3,
-        phase:Math.random()*6.28,
-        alpha:Math.random()*0.25+0.08
-      });
+    var angle=(fi/future.length)*6.28-Math.PI/2;
+    var radius=Math.min(w,h)*0.28+fi*25;
+    var fx=cx+Math.cos(angle)*radius,fy=cy+Math.sin(angle)*radius;
+    var pts=getTextPositions(txt),step=Math.max(1,Math.floor(pts.length/40));
+    for(var i=0;i<pts.length&&bgStars.length<200;i+=step){
+      bgStars.push({x:(pts[i].x-400)*0.18+fx,y:(pts[i].y-140)*0.18+fy,
+        r:Math.random()*1.5+0.5,phase:Math.random()*6.28,alpha:Math.random()*0.3+0.1});
     }
   });
 }
-
 function drawILCanvas(){
   if(!ilCanvasCtx||!state.lyricsOpen)return;
   var w=ilCanvas.width=ilCanvas.parentElement.clientWidth;
   var h=ilCanvas.height=ilCanvas.parentElement.clientHeight;
   if(w<10||h<10)return;
-  var ctx=ilCanvasCtx;
+  var ctx=ilCanvasCtx,t=Date.now()*0.001;
   ctx.clearRect(0,0,w,h);
-  var t=Date.now()*0.001;
-
-  // ═══ 渐变背景 ═══
-  var bg=ctx.createRadialGradient(w/2,h*0.45,0,w/2,h*0.45,Math.max(w,h)*0.6);
-  bg.addColorStop(0,"rgba(10,20,45,0.5)");bg.addColorStop(0.5,"rgba(5,12,30,0.3)");bg.addColorStop(1,"rgba(6,10,20,0.1)");
-  ctx.fillStyle=bg;ctx.fillRect(0,0,w,h);
-
-  // ═══ 背景星空 ═══
+  // 渐变背景
+  var g1=ctx.createLinearGradient(0,0,w,h);
+  g1.addColorStop(0,"#0a0e1a");g1.addColorStop(0.5,"#0d1225");g1.addColorStop(1,"#0a1020");
+  ctx.fillStyle=g1;ctx.fillRect(0,0,w,h);
+  var g2=ctx.createRadialGradient(w/2,h/2,0,w/2,h/2,Math.min(w,h)*0.5);
+  g2.addColorStop(0,"rgba(10,40,80,0.3)");g2.addColorStop(1,"rgba(0,0,0,0)");
+  ctx.fillStyle=g2;ctx.fillRect(0,0,w,h);
+  // 背景星空（环绕未来歌词）
   ctx.save();
   for(var i=0;i<bgStars.length;i++){
-    var s=bgStars[i];
-    var bx=s.x+Math.sin(t*0.4+s.phase)*5;
-    var by=s.y+Math.cos(t*0.35+s.phase)*4;
-    var a=s.alpha*(0.5+Math.sin(t*1.2+s.phase)*0.4);
-    ctx.beginPath();ctx.arc(bx,by,s.r,0,6.28);
-    ctx.fillStyle="rgba(10,132,255,"+a+")";
-    ctx.shadowBlur=3;ctx.shadowColor="rgba(10,132,255,"+a*0.4+")";
-    ctx.fill();
+    var s=bgStars[i],bx=s.x+Math.sin(t*0.3+s.phase)*3,by=s.y+Math.cos(t*0.25+s.phase)*3;
+    var a=s.alpha*(0.5+Math.sin(t*0.8+s.phase)*0.3);
+    ctx.beginPath();ctx.arc(bx,by,s.r,0,6.28);ctx.fillStyle="rgba(80,160,255,"+a+")";
+    ctx.shadowBlur=3;ctx.shadowColor="rgba(80,160,255,"+a*0.3+")";ctx.fill();
   }
   ctx.shadowBlur=0;
-  for(var i=0;i<bgStars.length;i+=3){
-    for(var j=i+3;j<Math.min(i+8,bgStars.length);j+=2){
-      var dx=bgStars[i].x-bgStars[j].x;var dy=bgStars[i].y-bgStars[j].y;
-      var dd=Math.sqrt(dx*dx+dy*dy);
-      if(dd<30){ctx.beginPath();ctx.moveTo(bgStars[i].x,bgStars[i].y);ctx.lineTo(bgStars[j].x,bgStars[j].y);ctx.strokeStyle="rgba(10,132,255,0.04)";ctx.stroke();}}}
+  for(var i=0;i<bgStars.length;i+=4){for(var j=i+4;j<Math.min(i+10,bgStars.length);j+=3){
+    var dx=bgStars[i].x-bgStars[j].x,dy=bgStars[i].y-bgStars[j].y,dd=Math.sqrt(dx*dx+dy*dy);
+    if(dd<30){ctx.beginPath();ctx.moveTo(bgStars[i].x,bgStars[i].y);ctx.lineTo(bgStars[j].x,bgStars[j].y);
+      ctx.strokeStyle="rgba(80,160,255,"+(1-dd/30)*0.05+")";ctx.stroke();}}}
   ctx.restore();
-
-  // ═══ 歌词切换 ═══
+  // 歌词切换 → 重新生成粒子
   if(state.currentLyricIndex!==prevLyricIdx){
-    prevLyricIdx=state.currentLyricIndex;
-    var text="";
-    if(state.currentLyricIndex>=0&&state.lyricLines[state.currentLyricIndex])
-      text=state.lyricLines[state.currentLyricIndex].text;
+    prevLyricIdx=state.currentLyricIndex;sweepPos=0;sweepActive=false;
+    var text=state.currentLyricIndex>=0&&state.lyricLines[state.currentLyricIndex]?state.lyricLines[state.currentLyricIndex].text:"";
     if(text){
-      var rawPts=getTextPositions(text);
-      var mappedPts=mapPos(rawPts,w,h);
-      curParticles=[];
-      var step=Math.max(1,Math.floor(mappedPts.length/PCOUNT));
-      for(var i=0;i<mappedPts.length&&curParticles.length<PCOUNT;i+=step){
-        curParticles.push(mkP(mappedPts[i].x,mappedPts[i].y,w,h));
+      var mp=mapPos(getTextPositions(text),w,h);curParticles=[];
+      var step=Math.max(1,Math.floor(mp.length/PCOUNT));
+      var minTx=Infinity,maxTx=-Infinity;
+      for(var i=0;i<mp.length&&curParticles.length<PCOUNT;i+=step){
+        var p=mkP(mp[i].x,mp[i].y,w,h);curParticles.push(p);
+        if(mp[i].x<minTx)minTx=mp[i].x;if(mp[i].x>maxTx)maxTx=mp[i].x;
       }
+      var range=maxTx-minTx||1;
+      curParticles.forEach(function(p){p.textPos=(p.tx-minTx)/range;});
     }else{curParticles=[];}
     updateStars(w,h);
   }
-
-  // ═══ 绘制当前歌词粒子 ═══
+  // 全部到达后启动逐字扫描
+  var allArr=curParticles.length>0;
+  curParticles.forEach(function(p){if(!p.arrived)allArr=false;});
+  if(allArr&&!sweepActive){sweepActive=true;sweepPos=0;}
+  if(sweepActive)sweepPos+=w*0.005;
+  // 绘制当前歌词粒子
   ctx.save();
   for(var i=0;i<curParticles.length;i++){
     var p=curParticles[i];
-    var dx=p.tx-p.x,dy=p.ty-p.y;
-    var dist=Math.sqrt(dx*dx+dy*dy);
+    var dx=p.tx-p.x,dy=p.ty-p.y,dist=Math.sqrt(dx*dx+dy*dy);
     if(dist>1){p.vx+=dx*CONVERGE;p.vy+=dy*CONVERGE;}
-    p.vx*=0.84;p.vy*=0.84;
-    p.x+=p.vx+Math.sin(t*2+p.phase)*0.2;
-    p.y+=p.vy+Math.cos(t*1.8+p.phase)*0.2;
+    p.vx*=0.82;p.vy*=0.82;p.x+=p.vx+Math.sin(t*2+p.phase)*0.15;p.y+=p.vy+Math.cos(t*1.8+p.phase)*0.15;
     if(dist<2&&!p.arrived)p.arrived=true;
-    var alpha=p.arrived?(0.8+Math.sin(t*1.5+p.phase)*0.15):0.3;
-    var sz=p.r*(p.arrived?1:0.5);
+    var lit=sweepActive&&(p.tx<sweepPos);
+    var alpha=lit?(0.95+Math.sin(t*2+p.phase)*0.05):(p.arrived?0.6:0.25);
+    var sz=p.r*(p.arrived?1:0.4);
     ctx.beginPath();ctx.arc(p.x,p.y,sz,0,6.28);
-    var lightness=p.arrived?65:50;
-    ctx.fillStyle="hsla(210,100%,"+lightness+"%,"+alpha+")";
-    ctx.shadowBlur=p.arrived?8:2;
-    ctx.shadowColor="hsla(210,100%,60%,"+alpha*0.5+")";
+    if(lit){ctx.fillStyle="rgba(200,230,255,"+alpha+")";ctx.shadowBlur=10;ctx.shadowColor="rgba(120,200,255,0.7)";}
+    else{ctx.fillStyle="rgba(80,160,255,"+alpha+")";ctx.shadowBlur=p.arrived?5:1;ctx.shadowColor="rgba(60,140,255,0.3)";}
     ctx.fill();
   }
   // 连线
-  ctx.lineWidth=0.2;ctx.shadowBlur=0;
-  for(var i=0;i<curParticles.length;i+=3){
-    if(!curParticles[i].arrived)continue;
-    for(var j=i+3;j<Math.min(i+10,curParticles.length);j+=2){
-      if(!curParticles[j].arrived)continue;
-      var dxx=curParticles[i].x-curParticles[j].x;
-      var dyy=curParticles[i].y-curParticles[j].y;
-      var dd=Math.sqrt(dxx*dxx+dyy*dyy);
-      if(dd<14){ctx.beginPath();ctx.moveTo(curParticles[i].x,curParticles[i].y);ctx.lineTo(curParticles[j].x,curParticles[j].y);ctx.strokeStyle="rgba(100,180,255,0.08)";ctx.stroke();}}}
+  ctx.lineWidth=0.3;ctx.shadowBlur=0;
+  for(var i=0;i<curParticles.length;i+=2){if(!curParticles[i].arrived)continue;
+    for(var j=i+2;j<Math.min(i+8,curParticles.length);j+=2){if(!curParticles[j].arrived)continue;
+      var dxx=curParticles[i].x-curParticles[j].x,dyy=curParticles[i].y-curParticles[j].y,dd=Math.sqrt(dxx*dxx+dyy*dyy);
+      if(dd<12){var ls=sweepActive&&(curParticles[i].tx<sweepPos||curParticles[j].tx<sweepPos);
+        ctx.beginPath();ctx.moveTo(curParticles[i].x,curParticles[i].y);ctx.lineTo(curParticles[j].x,curParticles[j].y);
+        ctx.strokeStyle=ls?"rgba(160,220,255,0.12)":"rgba(60,140,255,0.05)";ctx.stroke();}}}
   ctx.restore();
+  // 扫描发光条
+  if(sweepActive&&sweepPos<w+100){
+    ctx.save();var sg=ctx.createLinearGradient(sweepPos-80,0,sweepPos+15,0);
+    sg.addColorStop(0,"rgba(120,200,255,0)");sg.addColorStop(0.6,"rgba(120,200,255,0.06)");sg.addColorStop(1,"rgba(120,200,255,0)");
+    ctx.fillStyle=sg;ctx.fillRect(sweepPos-80,h*0.15,95,h*0.7);ctx.restore();
+  }
 }
 function animationLoop(){if(state.isPlaying&&audio.duration){updateLyricProgress();}if(state.lyricsOpen)drawILCanvas();drawMainWaveform();requestAnimationFrame(animationLoop);}
 requestAnimationFrame(animationLoop);
@@ -1276,7 +1240,7 @@ function openLyrics(){
   il.classList.add("show");
   // always init canvas
   if(!ilCanvas)initILCanvas();
-  setTimeout(function(){if(ilCanvas){ilCanvas.width=il.parentElement.clientWidth*devicePixelRatio;ilCanvas.height=il.parentElement.clientHeight*devicePixelRatio;}},100);
+  setTimeout(function(){if(ilCanvas){ilCanvas.width=il.parentElement.clientWidth;ilCanvas.height=il.parentElement.clientHeight;}},100);
 }
 function closeLyrics(){state.lyricsOpen=false;$("immersiveLyrics").classList.remove("show");}
 function toggleLyricPanel(){state.lyricVisible=!state.lyricVisible;var p=$("lyricPanel"),b=$("btnLyric");if(state.lyricVisible){p.style.display="flex";}else{p.style.display="none";}if(b)b.classList.toggle("active",state.lyricVisible);}
