@@ -270,8 +270,9 @@ body {
   background: var(--border);
   box-shadow: 0 2px 10px rgba(0,0,0,.1);
   transition: transform .2s;
+  cursor: pointer;
 }
-.song-cover:hover { transform: scale(1.05); }
+.song-cover:hover { transform: scale(1.08); }
 .song-cover-placeholder {
   width: 56px; height: 56px; border-radius: 10px;
   background: linear-gradient(135deg, var(--accent-bg), rgba(0,122,255,.02));
@@ -508,13 +509,31 @@ body {
 
 /* ═══ ANIMATIONS ═══ */
 @keyframes spin { to { transform: rotate(360deg); } }
-@keyframes fadeIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+@keyframes fadeIn { from { opacity:0; transform:translateY(10px) scale(.97); } to { opacity:1; transform:translateY(0) scale(1); } }
 @keyframes fadeSlideIn { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:translateY(0); } }
-@keyframes breathe { 0%,100% { box-shadow: 0 2px 12px rgba(0,122,255,.25); } 50% { box-shadow: 0 2px 24px rgba(0,122,255,.45); } }
-@keyframes toastIn { 0% { transform: translateX(-50%) translateY(20px) scale(.9); opacity:0; } 60% { transform: translateX(-50%) translateY(-3px) scale(1.02); } 100% { transform: translateX(-50%) translateY(0) scale(1); opacity:1; } }
-@keyframes coverPulse { 0% { transform: scale(.92); opacity:.5; } 100% { transform: scale(1); opacity:1; } }
+@keyframes breathe { 0%,100% { box-shadow: 0 2px 12px rgba(0,122,255,.25); } 50% { box-shadow: 0 2px 28px rgba(0,122,255,.5); } }
+@keyframes toastIn { 0% { transform: translateX(-50%) translateY(20px) scale(.85); opacity:0; } 60% { transform: translateX(-50%) translateY(-5px) scale(1.04); } 100% { transform: translateX(-50%) translateY(0) scale(1); opacity:1; } }
+@keyframes coverPop { 0% { transform: scale(.85); opacity:.4; } 60% { transform: scale(1.04); } 100% { transform: scale(1); opacity:1; } }
+@keyframes slideUp { from { opacity:0; transform:translateY(40px); } to { opacity:1; transform:translateY(0); } }
+@keyframes pulse { 0%,100% { transform:scale(1); } 50% { transform:scale(1.08); } }
 
-.track-card { animation: fadeIn .3s ease both; }
+.track-row { animation: fadeIn .35s cubic-bezier(.34,1.56,.64,1) both; }
+.track-row:nth-child(1) { animation-delay:.02s; }
+.track-row:nth-child(2) { animation-delay:.04s; }
+.track-row:nth-child(3) { animation-delay:.06s; }
+.track-row:nth-child(4) { animation-delay:.08s; }
+.track-row:nth-child(5) { animation-delay:.10s; }
+.track-row:nth-child(6) { animation-delay:.12s; }
+.track-row:nth-child(7) { animation-delay:.14s; }
+.track-row:nth-child(8) { animation-delay:.16s; }
+.track-row:nth-child(9) { animation-delay:.18s; }
+.track-row:nth-child(10) { animation-delay:.20s; }
+
+.song-cover.animate-in { animation: coverPop .5s cubic-bezier(.34,1.56,.64,1) both; }
+.play-btn.playing { animation: breathe 2.5s ease-in-out infinite; }
+
+.immersive-lyrics.show { animation: slideUp .4s cubic-bezier(.4,0,.2,1) both; }
+.il-body .lyric-line.active { animation: pulse .6s ease both; }
 </style>
 </head>
 <body>
@@ -651,11 +670,11 @@ body {
     <div class="progress-fill" id="progressFill"></div>
   </div>
   <div class="player-content">
-    <div class="song-info" onclick="App.openLyrics()">
-      <div class="song-cover-placeholder" id="coverPlaceholder">
+    <div class="song-info">
+      <div class="song-cover-placeholder" id="coverPlaceholder" onclick="App.openLyrics()" style="cursor:pointer">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
       </div>
-      <img class="song-cover" id="coverImg" src="" style="display:none" onerror="this.style.display='none';document.getElementById('coverPlaceholder').style.display='flex'">
+      <img class="song-cover" id="coverImg" src="" style="display:none" onclick="App.openLyrics()" onerror="this.style.display='none';document.getElementById('coverPlaceholder').style.display='flex'">
       <div class="song-text">
         <div class="song-name" id="songName">未在播放</div>
         <div class="song-artist" id="songArtist">--</div>
@@ -823,6 +842,9 @@ function playSong(song,index,listType) {
   if(song.cover){
     $("coverImg").src=song.cover; $("coverImg").style.display="block";
     $("coverPlaceholder").style.display="none";
+    $("coverImg").classList.remove("animate-in");
+    void $("coverImg").offsetWidth;
+    $("coverImg").classList.add("animate-in");
     extractCoverColor(song.cover);
   } else {
     $("coverImg").style.display="none"; $("coverPlaceholder").style.display="flex";
