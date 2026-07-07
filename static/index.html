@@ -238,6 +238,13 @@ body {
 .player-bar {
   flex-shrink: 0; background: var(--card);
   border-top: 1px solid var(--border); z-index: 20;
+  position: relative;
+}
+
+.main-waveform {
+  position: absolute; bottom: 100%; left: 0; right: 0;
+  height: 80px; pointer-events: none; z-index: 0;
+  opacity: .5;
 }
 
 .progress-bar {
@@ -372,8 +379,7 @@ body {
 .immersive-lyrics {
   position: fixed; inset: 0; z-index: 1000;
   display: none; flex-direction: column;
-  background: linear-gradient(135deg, #0a0e1a 0%, #0d1528 30%, #0a1628 60%, #0e0a1a 100%);
-  color: #fff;
+  background: #060a14; color: #fff;
   overflow: hidden;
 }
 .immersive-lyrics.show { display: flex; }
@@ -381,21 +387,16 @@ body {
 .il-bg {
   position: absolute; inset: -100px;
   background-size: cover; background-position: center;
-  filter: blur(120px) saturate(1.6) brightness(.18);
-  transform: scale(1.4);
-  opacity: .6;
-}
-.il-bg::before {
-  content: ""; position: absolute; inset: 0;
-  background: radial-gradient(ellipse at 50% 40%, rgba(10,132,255,.1) 0%, transparent 60%);
+  filter: blur(140px) saturate(1.8) brightness(.2);
+  transform: scale(1.5); opacity: .5;
 }
 .il-bg::after {
   content: ""; position: absolute; inset: 0;
-  background: linear-gradient(180deg, rgba(10,14,26,.3) 0%, rgba(10,14,26,.5) 50%, rgba(10,14,26,.8) 100%);
+  background: radial-gradient(ellipse at 50% 50%, rgba(6,10,20,.3) 0%, rgba(6,10,20,.8) 100%);
 }
 
 .il-header {
-  position: relative; z-index: 2;
+  position: relative; z-index: 3;
   display: flex; align-items: center; justify-content: space-between;
   padding: 20px 32px; flex-shrink: 0;
 }
@@ -420,42 +421,31 @@ body {
 .il-action-btn:hover { background: rgba(255,255,255,.15); color: #fff; }
 .il-action-btn.active { background: var(--accent); color: #fff; }
 
-/* 歌词主体：全屏居中，只显示当前句 */
+/* 歌词：全屏居中 */
 .il-body {
-  position: relative; z-index: 1;
-  flex: 1; display: flex; align-items: center; justify-content: center;
+  position: relative; z-index: 2;
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
   text-align: center; padding: 0 10%;
 }
 .il-current-lyric {
-  font-size: 42px; font-weight: 800;
+  font-size: 44px; font-weight: 800; line-height: 1.5;
   color: rgba(255,255,255,.95);
-  text-shadow: 0 0 40px rgba(10,132,255,.4), 0 0 80px rgba(10,132,255,.2);
-  max-width: 80%; line-height: 1.6;
-  animation: lyricFlyIn .7s cubic-bezier(.34,1.56,.64,1) both;
+  text-shadow: 0 0 40px rgba(10,132,255,.5), 0 0 80px rgba(10,132,255,.25), 0 2px 4px rgba(0,0,0,.3);
+  max-width: 80%;
 }
 .il-translation-line {
   font-size: 18px; font-weight: 400;
-  color: rgba(255,255,255,.4);
-  margin-top: 12px;
-  animation: lyricFlyIn .7s .1s cubic-bezier(.34,1.56,.64,1) both;
+  color: rgba(255,255,255,.35); margin-top: 10px;
 }
 .il-next-lyric {
-  position: absolute; bottom: 15%; left: 50%; transform: translateX(-50%);
-  font-size: 16px; color: rgba(255,255,255,.2);
+  position: absolute; bottom: 12%; left: 50%; transform: translateX(-50%);
+  font-size: 16px; color: rgba(255,255,255,.15);
   max-width: 70%; text-align: center;
-  transition: all .5s;
-}
-@keyframes lyricFlyIn {
-  0% { opacity:0; transform:scale(0.5) translateY(20px); filter:blur(10px); }
-  100% { opacity:1; transform:scale(1) translateY(0); filter:blur(0); }
-}
-@keyframes lyricFlyOut {
-  0% { opacity:1; transform:scale(1); }
-  100% { opacity:0; transform:scale(1.2) translateY(-30px); filter:blur(10px); }
 }
 
 .il-controls {
-  position: relative; z-index: 2;
+  position: relative; z-index: 3;
   flex-shrink: 0; padding: 16px 10% 32px;
   display: flex; flex-direction: column; align-items: center; gap: 14px;
 }
@@ -483,7 +473,7 @@ body {
 .il-btns .play-btn svg { width: 24px; height: 24px; }
 
 .il-canvas {
-  position: absolute; inset: 0; pointer-events: none; opacity: .6; z-index: 0;
+  position: absolute; inset: 0; pointer-events: none; z-index: 1;
 }
 
 /* ═══ MAIN PAGE WAVEFORM ═══ */
@@ -1083,129 +1073,164 @@ function drawMainWaveform(){
   for(var l=0;l<layers.length;l++){var layer=layers[l];ctx.save();ctx.beginPath();ctx.lineWidth=layer.width;ctx.lineJoin="round";ctx.lineCap="round";ctx.globalAlpha=layer.alpha;ctx.shadowBlur=layer.blur;ctx.shadowColor="rgba(0,122,255,0.4)";var grad=ctx.createLinearGradient(0,0,w,0);grad.addColorStop(0,"rgba(0,122,255,0.1)");grad.addColorStop(0.3,"rgba(0,122,255,0.6)");grad.addColorStop(0.5,"rgba(64,156,255,0.8)");grad.addColorStop(0.7,"rgba(0,122,255,0.6)");grad.addColorStop(1,"rgba(0,122,255,0.1)");ctx.strokeStyle=grad;var sliceW=w/(points-1);var baseY=h-4*dpr;var amp=(h-8*dpr)*0.5;for(var i=0;i<points;i++){var x=i*sliceW;var val=samples[i];var wave=Math.sin(i*0.3+Date.now()*0.002)*0.1;var y=baseY-(val+wave)*amp+layer.yOff;if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);}ctx.stroke();ctx.restore();}
 }
 var ilCanvasCtx,ilCanvas;
-// ═══ PARTICLE TEXT SYSTEM ═══
+// ═══ FULLSCREEN LYRICS CANVAS ═══
 var ilCanvasCtx,ilCanvas;
 var textParticles=[];
 var ilLastLyricIdx=-1;
-var PARTICLE_COUNT=500;
-var CONVERGE_SPEED=0.06;
-var SCATTER_SPEED=8;
+var TEXT_PCOUNT=500;
+var CONVERGE=0.07;
 
 function initILCanvas(){ilCanvas=$("ilCanvas");if(ilCanvas)ilCanvasCtx=ilCanvas.getContext("2d");}
+function dpr(){return window.devicePixelRatio||1;}
 
-// 采样文字像素位置
-function sampleText(text,dpr,w,h){
+function sampleText(text,_dpr,w,h){
   if(!text)return[];
   var c=document.createElement("canvas"),ctx=c.getContext("2d");
-  var fontSize=Math.min(72,Math.max(32,Math.floor(w/(text.length*0.8)/dpr)))*dpr;
+  var fs=Math.min(80,Math.max(36,Math.floor(w/(text.length*0.9)/_dpr)))*_dpr;
   c.width=w;c.height=h;
-  ctx.fillStyle="#fff";ctx.font="800 "+fontSize+"px -apple-system,'PingFang SC','Microsoft YaHei',sans-serif";
-  ctx.textAlign="center";ctx.textBaseline="middle";
-  ctx.fillText(text,w/2,h/2);
-  var data=ctx.getImageData(0,0,w,h).data;
-  var pts=[];
-  var step=Math.max(2,Math.floor(3/dpr));
-  for(var y=0;y<h;y+=step*dpr){for(var x=0;x<w;x+=step*dpr){if(data[(y*w+x)*4+3]>100)pts.push({x:x,y:y});}}
+  ctx.fillStyle="#fff";ctx.font="800 "+fs+"px -apple-system,'PingFang SC','Microsoft YaHei',sans-serif";
+  ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText(text,w/2,h/2);
+  var data=ctx.getImageData(0,0,w,h).data,pts=[];
+  var step=Math.max(2,Math.floor(4/_dpr));
+  for(var y=0;y<h;y+=step*_dpr){for(var x=0;x<w;x+=step*_dpr){if(data[(y*w+x)*4+3]>100)pts.push({x:x,y:y});}}
   return pts;
 }
 
-// 创建粒子：从屏幕边缘飞入
 function spawnParticle(tx,ty,w,h){
-  var side=Math.floor(Math.random()*4);
-  var sx,sy;
-  if(side===0){sx=Math.random()*w;sy=-30-dpr()*Math.random()*100;}
-  else if(side===1){sx=w+30+dpr()*Math.random()*100;sy=Math.random()*h;}
-  else if(side===2){sx=Math.random()*w;sy=h+30+dpr()*Math.random()*100;}
-  else{sx=-30-dpr()*Math.random()*100;sy=Math.random()*h;}
-  return{x:sx,y:sy,tx:tx,ty:ty,vx:(Math.random()-0.5)*4,vy:(Math.random()-0.5)*4,
-    r:Math.random()*2.5+1,phase:Math.random()*Math.PI*2,
-    arrived:false,life:1,
-    color:Math.random()>0.4?"rgba(10,132,255,":"rgba(64,156,255,"
+  var side=Math.floor(Math.random()*4),sx,sy,off=100+Math.random()*200;
+  if(side===0){sx=Math.random()*w;sy=-off;}else if(side===1){sx=w+off;sy=Math.random()*h;}
+  else if(side===2){sx=Math.random()*w;sy=h+off;}else{sx=-off;sy=Math.random()*h;}
+  return{x:sx,y:sy,tx:tx,ty:ty,vx:(Math.random()-0.5)*6,vy:(Math.random()-0.5)*6,
+    r:Math.random()*3+1,phase:Math.random()*Math.PI*2,arrived:false,
+    color:Math.random()>0.4?"rgba(10,132,255,":"rgba(80,170,255,"
   };
 }
-function dpr(){return window.devicePixelRatio||1;}
 
-// 主绘制函数
-function drawILCanvas(){if(!ilCanvasCtx||!state.lyricsOpen)return;
-var _dpr=dpr();
-var w=ilCanvas.width=ilCanvas.parentElement.clientWidth*_dpr;
-var h=ilCanvas.height=ilCanvas.parentElement.clientHeight*_dpr;
-var ctx=ilCanvasCtx;ctx.clearRect(0,0,w,h);
-var t=Date.now()*0.001;
-var bass=0;if(analyser&&freqData){analyser.getByteFrequencyData(freqData);for(var i=0;i<8;i++)bass+=freqData[i];bass=bass/8/255;}
+function drawILCanvas(){
+  if(!ilCanvasCtx||!state.lyricsOpen)return;
+  var _dpr=dpr();
+  var w=ilCanvas.width=ilCanvas.parentElement.clientWidth*_dpr;
+  var h=ilCanvas.height=ilCanvas.parentElement.clientHeight*_dpr;
+  var ctx=ilCanvasCtx;ctx.clearRect(0,0,w,h);
+  var t=Date.now()*0.001;
+  var bass=0,mid=0,treble=0;
+  if(analyser&&freqData){analyser.getByteFrequencyData(freqData);
+    for(var i=0;i<8;i++)bass+=freqData[i];for(var i=8;i<32;i++)mid+=freqData[i];for(var i=32;i<64;i++)treble+=freqData[i];
+    bass=bass/8/255;mid=mid/24/255;treble=treble/32/255;
+  }
 
-// ── 渐变背景（不是纯黑）──
-var bg=ctx.createRadialGradient(w/2,h*0.4,0,w/2,h*0.4,Math.max(w,h)*0.6);
-bg.addColorStop(0,"rgba(10,20,40,"+(0.3+bass*0.2)+")");
-bg.addColorStop(0.5,"rgba(5,10,25,"+(0.2+bass*0.1)+")");
-bg.addColorStop(1,"rgba(10,14,26,0.1)");
-ctx.fillStyle=bg;ctx.fillRect(0,0,w,h);
-
-// ── 微弱的极光背景 ──
-ctx.save();ctx.globalAlpha=0.15+bass*0.1;
-var aGrad=ctx.createLinearGradient(0,h*0.2,w,h*0.8);
-aGrad.addColorStop(0,"rgba(10,132,255,0.1)");
-aGrad.addColorStop(0.3,"rgba(64,156,255,0.15)");
-aGrad.addColorStop(0.6,"rgba(10,80,200,0.1)");
-aGrad.addColorStop(1,"rgba(64,156,255,0.05)");
-ctx.fillStyle=aGrad;
-ctx.beginPath();
-for(var x=0;x<=w;x+=6*_dpr){var fv=analyser&&freqData?freqData[Math.floor((x/w)*32)]/255:0.03;var y=h*0.5+Math.sin(x*0.001+t*0.3)*50*_dpr+fv*30*_dpr;ctx.lineTo(x,y);}
-ctx.lineTo(w,h);ctx.lineTo(0,h);ctx.closePath();ctx.fill();ctx.restore();
-
-// ── 检测歌词切换 ──
-if(state.currentLyricIndex!==ilLastLyricIdx){
-  ilLastLyricIdx=state.currentLyricIndex;
-  var text="";
-  if(state.currentLyricIndex>=0&&state.lyricLines[state.currentLyricIndex])
-    text=state.lyricLines[state.currentLyricIndex].text;
-  if(text){
-    var positions=sampleText(text,_dpr,w,h);
-    var newP=[];
-    var maxP=Math.min(positions.length,PARTICLE_COUNT);
-    var step=Math.max(1,Math.floor(positions.length/maxP));
-    for(var i=0;i<positions.length&&newP.length<maxP;i+=step){
-      newP.push(spawnParticle(positions[i].x,positions[i].y,w,h));
+  // ═══ 1. 夸张的全屏音轨波形 ═══
+  // 多层波形从中心向外扩散
+  for(var layer=0;layer<5;layer++){
+    var layerAlpha=0.15-layer*0.02;
+    var layerY=h*0.5+Math.sin(t*0.3+layer*1.5)*30*_dpr;
+    ctx.save();ctx.beginPath();ctx.lineWidth=(3-layer*0.4)*_dpr;
+    ctx.lineJoin="round";ctx.lineCap="round";ctx.globalAlpha=layerAlpha+bass*0.1;
+    ctx.shadowBlur=(20-layer*3)*_dpr;ctx.shadowColor="rgba(10,132,255,0.5)";
+    var grad=ctx.createLinearGradient(0,0,w,0);
+    grad.addColorStop(0,"rgba(10,132,255,0)");grad.addColorStop(0.15,"rgba(10,132,255,0.4)");
+    grad.addColorStop(0.3,"rgba(64,156,255,0.8)");grad.addColorStop(0.5,"rgba(100,180,255,1)");
+    grad.addColorStop(0.7,"rgba(64,156,255,0.8)");grad.addColorStop(0.85,"rgba(10,132,255,0.4)");
+    grad.addColorStop(1,"rgba(10,132,255,0)");ctx.strokeStyle=grad;
+    var pts=128;var step=Math.floor((analyser&&freqData?freqData.length:32)/pts);
+    for(var i=0;i<=pts;i++){
+      var x=(i/pts)*w;
+      var fv=(analyser&&freqData)?freqData[i*step]/255:0.05;
+      var wave=Math.sin(x*0.003+t*(0.8+layer*0.2)+layer*2)*20*_dpr;
+      var y=layerY-wave-(fv*100+layer*20)*_dpr;
+      if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);
     }
-    textParticles=newP;
-  }else{textParticles=[];}
-}
+    ctx.stroke();ctx.restore();
+  }
 
-// ── 绘制粒子 ──
-ctx.save();
-for(var i=0;i<textParticles.length;i++){
-  var p=textParticles[i];
-  // 飞向目标
-  var dx=p.tx-p.x,dy=p.ty-p.y;
-  var dist=Math.sqrt(dx*dx+dy*dy);
-  if(dist>2){p.vx+=dx*CONVERGE_SPEED;p.vy+=dy*CONVERGE_SPEED;}
-  p.vx*=0.88;p.vy*=0.88;
-  // 微抖动
-  p.x+=p.vx+Math.sin(t*3+p.phase)*0.3*_dpr;
-  p.y+=p.vy+Math.cos(t*2.5+p.phase)*0.3*_dpr;
-  // 到达判断
-  if(dist<3&&!p.arrived)p.arrived=true;
-  // 绘制
-  var alpha=p.arrived?(0.7+Math.sin(t*2+p.phase)*0.2):0.5;
-  var sz=p.r*_dpr*(p.arrived?1:0.8);
-  ctx.beginPath();ctx.arc(p.x,p.y,sz,0,Math.PI*2);
-  ctx.fillStyle=p.color+alpha+")";
-  ctx.shadowBlur=(p.arrived?6:3)*_dpr;ctx.shadowColor=p.color+alpha*0.5+")";
-  ctx.fill();
-}
+  // 径向环形波纹（从中心向外扩散）
+  for(var ring=0;ring<3;ring++){
+    var baseR=(60+ring*80+bass*120)*_dpr;
+    ctx.save();ctx.beginPath();ctx.lineWidth=(2.5-ring*0.5)*_dpr;
+    ctx.globalAlpha=0.2+bass*0.15;ctx.shadowBlur=15*_dpr;
+    ctx.shadowColor="rgba(10,132,255,0.4)";
+    var rGrad=ctx.createRadialGradient(w/2,h/2,baseR-30*_dpr,w/2,h/2,baseR+30*_dpr);
+    rGrad.addColorStop(0,"rgba(10,132,255,0)");rGrad.addColorStop(0.5,"rgba(64,156,255,0.3)");
+    rGrad.addColorStop(1,"rgba(10,132,255,0)");ctx.strokeStyle=rGrad;
+    var rp=80;for(var i=0;i<=rp;i++){var angle=(i/rp)*Math.PI*2;
+      var fv2=(analyser&&freqData)?freqData[Math.floor((i/rp)*32)]/255:0.03;
+      var r=baseR+(fv2+Math.sin(angle*3+t*0.8+ring)*0.2)*20*_dpr;
+      var px=w/2+Math.cos(angle)*r;var py=h/2+Math.sin(angle)*r;
+      if(i===0)ctx.moveTo(px,py);else ctx.lineTo(px,py);}
+    ctx.closePath();ctx.stroke();ctx.restore();
+  }
 
-// ── 粒子连线（到达后才连线）──
-ctx.lineWidth=0.2*_dpr;ctx.shadowBlur=0;
-for(var i=0;i<textParticles.length;i+=4){
-  if(!textParticles[i].arrived)continue;
-  for(var j=i+4;j<Math.min(i+20,textParticles.length);j+=3){
-    if(!textParticles[j].arrived)continue;
-    var dx2=textParticles[i].x-textParticles[j].x;var dy2=textParticles[i].y-textParticles[j].y;
-    var d2=Math.sqrt(dx2*dx2+dy2*dy2);
-    if(d2<18*_dpr){var la=(1-d2/(18*_dpr))*0.12;if(la>0.005){ctx.beginPath();ctx.moveTo(textParticles[i].x,textParticles[i].y);ctx.lineTo(textParticles[j].x,textParticles[j].y);ctx.strokeStyle="rgba(64,156,255,"+la+")";ctx.stroke();}}}}
-ctx.restore();ctx.shadowBlur=0;
+  // 竖向光柱（从底部向上）
+  var beamN=16;
+  for(var b=0;b<beamN;b++){
+    var bx=(b/beamN)*w+w/beamN*0.5;
+    var fbi=Math.floor((b/beamN)*32);var fbv=analyser&&freqData?freqData[fbi]/255:0.03;
+    if(fbv<0.08)continue;
+    ctx.save();
+    var beamH=h*(0.2+fbv*0.5);
+    var bGrad=ctx.createLinearGradient(bx,h,bx,h-beamH);
+    bGrad.addColorStop(0,"rgba(10,132,255,"+fbv*0.3+")");
+    bGrad.addColorStop(0.5,"rgba(64,156,255,"+fbv*0.15+")");
+    bGrad.addColorStop(1,"rgba(10,132,255,0)");
+    ctx.fillStyle=bGrad;ctx.globalAlpha=0.3+fbv*0.5;
+    ctx.fillRect(bx-(8+fbv*16)*_dpr*0.5,h-beamH,(8+fbv*16)*_dpr,beamH);
+    ctx.restore();
+  }
+
+  // 中心脉冲光晕
+  var glowR=(80+bass*250)*_dpr;
+  var cg=ctx.createRadialGradient(w/2,h/2,0,w/2,h/2,glowR);
+  cg.addColorStop(0,"rgba(10,132,255,"+(0.15+bass*0.25)+")");
+  cg.addColorStop(0.3,"rgba(64,156,255,"+(0.06+bass*0.12)+")");
+  cg.addColorStop(1,"rgba(0,0,0,0)");
+  ctx.fillStyle=cg;ctx.fillRect(0,0,w,h);
+
+  // ═══ 2. 粒子文字聚合 ═══
+  // 检测歌词切换
+  if(state.currentLyricIndex!==ilLastLyricIdx){
+    ilLastLyricIdx=state.currentLyricIndex;
+    var text="";
+    if(state.currentLyricIndex>=0&&state.lyricLines[state.currentLyricIndex])
+      text=state.lyricLines[state.currentLyricIndex].text;
+    if(text){
+      var positions=sampleText(text,_dpr,w,h);
+      var newP=[];var maxP=Math.min(positions.length,TEXT_PCOUNT);
+      var step2=Math.max(1,Math.floor(positions.length/maxP));
+      for(var i=0;i<positions.length&&newP.length<maxP;i+=step2)
+        newP.push(spawnParticle(positions[i].x,positions[i].y,w,h));
+      textParticles=newP;
+    }else{textParticles=[];}
+  }
+
+  // 绘制粒子
+  ctx.save();
+  for(var i=0;i<textParticles.length;i++){
+    var p=textParticles[i];
+    var dx=p.tx-p.x,dy=p.ty-p.y;var dist=Math.sqrt(dx*dx+dy*dy);
+    if(dist>2){p.vx+=dx*CONVERGE;p.vy+=dy*CONVERGE;}
+    p.vx*=0.86;p.vy*=0.86;
+    p.x+=p.vx+Math.sin(t*3+p.phase)*0.4*_dpr;
+    p.y+=p.vy+Math.cos(t*2.5+p.phase)*0.4*_dpr;
+    if(dist<3&&!p.arrived)p.arrived=true;
+    var alpha=p.arrived?(0.7+Math.sin(t*2+p.phase)*0.2):0.4;
+    var sz=p.r*_dpr*(p.arrived?1:0.7);
+    ctx.beginPath();ctx.arc(p.x,p.y,sz,0,Math.PI*2);
+    ctx.fillStyle=p.color+alpha+")";
+    ctx.shadowBlur=(p.arrived?8:4)*_dpr;ctx.shadowColor=p.color+alpha*0.5+")";
+    ctx.fill();
+  }
+  // 粒子连线
+  ctx.lineWidth=0.25*_dpr;ctx.shadowBlur=0;
+  for(var i=0;i<textParticles.length;i+=3){
+    if(!textParticles[i].arrived)continue;
+    for(var j=i+3;j<Math.min(i+18,textParticles.length);j+=2){
+      if(!textParticles[j].arrived)continue;
+      var dxx=textParticles[i].x-textParticles[j].x;var dyy=textParticles[i].y-textParticles[j].y;
+      var dd=Math.sqrt(dxx*dxx+dyy*dyy);
+      if(dd<20*_dpr){var la=(1-dd/(20*_dpr))*0.15;if(la>0.005){ctx.beginPath();ctx.moveTo(textParticles[i].x,textParticles[i].y);ctx.lineTo(textParticles[j].x,textParticles[j].y);ctx.strokeStyle="rgba(80,170,255,"+la+")";ctx.stroke();}}}}
+  ctx.restore();ctx.shadowBlur=0;
 }
-function animationLoop(){if(state.isPlaying&&audio.duration){updateLyricProgress();if(state.lyricsOpen)drawILCanvas();drawMainWaveform();}requestAnimationFrame(animationLoop);}
+function animationLoop(){if(state.isPlaying&&audio.duration){updateLyricProgress();}if(state.lyricsOpen)drawILCanvas();drawMainWaveform();requestAnimationFrame(animationLoop);}
 requestAnimationFrame(animationLoop);
 
 // ═══ MODE / SPEED / VOLUME ═══
