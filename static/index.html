@@ -243,8 +243,8 @@ body {
 
 .main-waveform {
   position: fixed; bottom: 80px; left: 0; right: 0;
-  height: 60px; pointer-events: none; z-index: 99;
-  background: linear-gradient(180deg, transparent 0%, rgba(245,245,247,.03) 100%);
+  height: 70px; pointer-events: none; z-index: 99;
+  background: linear-gradient(180deg, transparent 0%, rgba(0,122,255,.06) 100%);
 }
 
 .progress-bar {
@@ -476,12 +476,6 @@ body {
 }
 
 /* ═══ MAIN PAGE WAVEFORM ═══ */
-.main-waveform {
-  position: absolute; bottom: 0; left: 0; right: 0;
-  height: 80px; pointer-events: none; z-index: 0;
-  opacity: .4;
-}
-
 /* ═══ MENUS ═══ */
 .context-menu, .speed-menu {
   position: fixed; background: var(--card);
@@ -1059,42 +1053,37 @@ var mainWaveCanvas,mainWaveCtx;
 function initMainWaveform(){mainWaveCanvas=$("mainWaveform");if(mainWaveCanvas)mainWaveCtx=mainWaveCanvas.getContext("2d");}
 function drawMainWaveform(){
   if(!mainWaveCanvas)return;
-  // 始终初始化canvas尺寸
   if(!mainWaveCtx)mainWaveCtx=mainWaveCanvas.getContext("2d");
   var w=mainWaveCanvas.width=mainWaveCanvas.clientWidth||window.innerWidth;
-  var h=mainWaveCanvas.height=mainWaveCanvas.clientHeight||60;
+  var h=mainWaveCanvas.height=70;
   if(w<10)return;
   var ctx=mainWaveCtx;ctx.clearRect(0,0,w,h);
   var t=Date.now()*0.001;
   var hasAudio=analyser&&freqData;
-  var samples=[];
-  var points=80;
+  var pts=100,samples=[];
   if(hasAudio){
     analyser.getByteFrequencyData(freqData);
-    var step=Math.floor(freqData.length/points);
-    for(var i=0;i<points;i++){var sum=0;for(var j=0;j<step;j++)sum+=freqData[i*step+j];samples.push(sum/step/255);}
+    var step=Math.floor(freqData.length/pts);
+    for(var i=0;i<pts;i++){var s=0;for(var j=0;j<step;j++)s+=freqData[i*step+j];samples.push(s/step/255);}
   }else{
-    // 待机：画微弱的呼吸波形
-    for(var i=0;i<points;i++){samples.push(0.03+Math.sin(i*0.15+t*1.5)*0.02);}
+    for(var i=0;i<pts;i++)samples.push(0.04+Math.sin(i*0.12+t*1.2)*0.025);
   }
-  var playing=state.isPlaying;
-  // 3层波形
+  // 绘制3层波形（更粗更亮）
   var layers=[
-    {blur:hasAudio?12:4,alpha:hasAudio?0.4:0.12,width:hasAudio?2.5:1.5,yOff:0,color:"0,122,255"},
-    {blur:hasAudio?6:2,alpha:hasAudio?0.5:0.15,width:hasAudio?1.8:1,yOff:-1,color:"64,156,255"},
-    {blur:hasAudio?2:1,alpha:hasAudio?0.7:0.2,width:hasAudio?1.2:0.8,yOff:-2,color:"100,180,255"}
+    {blur:15,alpha:hasAudio?0.5:0.15,width:3,yOff:0},
+    {blur:8,alpha:hasAudio?0.65:0.2,width:2,yOff:-1},
+    {blur:3,alpha:hasAudio?0.9:0.3,width:1.2,yOff:-2}
   ];
   for(var l=0;l<layers.length;l++){var L=layers[l];
     ctx.save();ctx.beginPath();ctx.lineWidth=L.width;ctx.lineJoin="round";ctx.lineCap="round";
-    ctx.globalAlpha=L.alpha;ctx.shadowBlur=L.blur;ctx.shadowColor="rgba("+L.color+",0.4)";
+    ctx.globalAlpha=L.alpha;ctx.shadowBlur=L.blur;ctx.shadowColor="rgba(0,122,255,0.6)";
     var grad=ctx.createLinearGradient(0,0,w,0);
-    grad.addColorStop(0,"rgba("+L.color+",0.02)");grad.addColorStop(0.2,"rgba("+L.color+",0.4)");
-    grad.addColorStop(0.5,"rgba("+L.color+",0.6)");grad.addColorStop(0.8,"rgba("+L.color+",0.4)");
-    grad.addColorStop(1,"rgba("+L.color+",0.02)");ctx.strokeStyle=grad;
-    var sliceW=w/(points-1);var baseY=h-2;var amp=(h-4)*0.45;
-    for(var i=0;i<points;i++){var x=i*sliceW;
-      var y=baseY-samples[i]*amp-L.yOff+(hasAudio?0:Math.sin(x*0.01+t)*1);
-      if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);}
+    grad.addColorStop(0,"rgba(0,122,255,0)");grad.addColorStop(0.15,"rgba(0,122,255,0.5)");
+    grad.addColorStop(0.35,"rgba(64,156,255,0.8)");grad.addColorStop(0.5,"rgba(100,180,255,1)");
+    grad.addColorStop(0.65,"rgba(64,156,255,0.8)");grad.addColorStop(0.85,"rgba(0,122,255,0.5)");
+    grad.addColorStop(1,"rgba(0,122,255,0)");ctx.strokeStyle=grad;
+    var sw=w/(pts-1),baseY=h-3,amp=(h-6)*0.5;
+    for(var i=0;i<pts;i++){var x=i*sw,y=baseY-samples[i]*amp+L.yOff;if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);}
     ctx.stroke();ctx.restore();}
 }
 // ═══ FULLSCREEN LYRICS CANVAS ═══
@@ -1208,11 +1197,11 @@ function drawILCanvas(){
     p.vx*=0.8;p.vy*=0.8;p.x+=p.vx+Math.sin(t*2+p.phase)*0.12;p.y+=p.vy+Math.cos(t*1.8+p.phase)*0.12;
     if(dist<1.5&&!p.arrived)p.arrived=true;
     var lit=sweepActive&&(p.tx<sweepPos);
-    var alpha=lit?(0.9+Math.sin(t*2+p.phase)*0.1):(p.arrived?0.5:0.2);
-    var sz=p.r*(p.arrived?1:0.35);
+    var alpha=lit?(0.95+Math.sin(t*2+p.phase)*0.05):(p.arrived?0.65:0.25);
+    var sz=p.r*(p.arrived?1.2:0.4);
     ctx.beginPath();ctx.arc(p.x,p.y,sz,0,6.28);
-    if(lit){ctx.fillStyle="rgba(200,230,255,"+alpha+")";ctx.shadowBlur=6;ctx.shadowColor="rgba(120,200,255,0.5)";}
-    else{ctx.fillStyle="rgba(80,160,255,"+alpha+")";ctx.shadowBlur=p.arrived?3:0;ctx.shadowColor="rgba(60,140,255,0.2)";}
+    if(lit){ctx.fillStyle="rgba(200,230,255,"+alpha+")";ctx.shadowBlur=8;ctx.shadowColor="rgba(120,200,255,0.6)";}
+    else{ctx.fillStyle="rgba(80,160,255,"+alpha+")";ctx.shadowBlur=p.arrived?4:0;ctx.shadowColor="rgba(60,140,255,0.3)";}
     ctx.fill();
   }
   ctx.lineWidth=0.2;ctx.shadowBlur=0;
