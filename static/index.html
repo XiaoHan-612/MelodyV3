@@ -330,64 +330,59 @@ function drawIL(){
   var ctx=ilCtx;
   var t=Date.now()*.001;
   ctx.clearRect(0,0,w,h);
-
-  // Background
-  var g=ctx.createRadialGradient(w/2,h*.4,0,w/2,h*.4,Math.max(w,h)*.6);
-  g.addColorStop(0,"rgba(10,20,45,.35)");g.addColorStop(1,"rgba(6,10,20,.08)");
-  ctx.fillStyle=g;ctx.fillRect(0,0,w,h);
-
   if(!S.lines.length)return;
   var allLines=S.lines;
   var ci=S.lyricIdx;
 
-  // 1. Background lyrics — like stars, varied size/brightness
+  // ── 1. Background lyrics as stars ──
   for(var i=0;i<allLines.length;i++){
     if(ci>=0&&Math.abs(i-ci)<=1)continue;
     var seed=i*7919;
     var px=(Math.sin(seed)*0.42+0.5)*w;
     var py=(Math.cos(seed*1.3)*0.38+0.5)*h;
     var dist=ci>=0?Math.abs(i-ci):3;
-    var fade=Math.max(0,1-dist/7);
-    var twinkle=0.6+Math.sin(t*1.8+seed)*0.4;
-    var alpha=fade*0.35*twinkle;
-    if(alpha<0.01)continue;
-    // Random size per star
-    var sizeSeed=(seed*13)%1;
-    var fs=14+sizeSeed*14;
+    // Brighter for closer lines, dimmer for far ones
+    var baseAlpha=0.55-Math.min(dist,8)*0.04;
+    var twinkle=0.7+Math.sin(t*2+seed)*0.3;
+    var alpha=baseAlpha*twinkle;
+    if(alpha<0.05)continue;
+    // Random size: 14-32px
+    var sizeSeed=Math.abs(Math.sin(seed*13))*1;
+    var fs=14+sizeSeed*18;
+    var weight=sizeSeed>0.5?"600":"400";
     ctx.save();
-    ctx.font=(sizeSeed>0.5?"600 ":"400 ")+fs+"px -apple-system,'PingFang SC',sans-serif";
+    ctx.font=weight+" "+fs+"px -apple-system,'PingFang SC',sans-serif";
     ctx.textAlign="center";ctx.textBaseline="middle";
     ctx.globalAlpha=alpha;
-    ctx.fillStyle="rgba(168,246,255,0.7)";
-    ctx.shadowBlur=8;ctx.shadowColor="rgba(10,132,255,"+alpha*0.5+")";
+    ctx.fillStyle="rgba(143,220,255,0.8)";
+    ctx.shadowBlur=12;ctx.shadowColor="rgba(0,122,255,"+alpha*0.6+")";
     ctx.fillText(allLines[i].text,px,py);
     ctx.shadowBlur=0;ctx.restore();
   }
 
-  // 2. Decorative sparkles
-  for(var i=0;i<20;i++){
+  // ── 2. Sparkles ──
+  for(var i=0;i<25;i++){
     var seed=i*3571;
-    var sx=(Math.sin(seed+t*0.4)*0.48+0.5)*w;
-    var sy=(Math.cos(seed*1.7+t*0.3)*0.45+0.5)*h;
-    var sa=0.12+Math.sin(t*2.5+seed)*0.1;
-    var sr=1.2+Math.sin(t*2+seed)*0.6;
+    var sx=(Math.sin(seed+t*0.5)*0.48+0.5)*w;
+    var sy=(Math.cos(seed*1.7+t*0.35)*0.45+0.5)*h;
+    var sa=0.15+Math.sin(t*3+seed)*0.12;
+    var sr=1.5+Math.sin(t*2+seed)*0.8;
     ctx.beginPath();ctx.arc(sx,sy,sr,0,6.28);
-    ctx.fillStyle="rgba(143,233,255,"+sa+")";ctx.fill();
+    ctx.fillStyle="rgba(180,230,255,"+sa+")";ctx.fill();
   }
 
-  // 3. Active lyric — centered, per-char with SMOOTH transition
+  // ── 3. Active lyric — smooth per-char highlight ──
   if(ci<0||ci>=allLines.length)return;
   var curLine=allLines[ci];
   var lineStart=curLine.time;
   var nextLine=allLines[ci+1];
   var lineEnd=nextLine?nextLine.time:(audio.duration||lineStart+5);
   var lineDur=lineEnd-lineStart;
-  // charProg: 0~1, how far through the line
   var charProg=0;
   if(lineDur>0)charProg=Math.max(0,Math.min(1,(audio.currentTime-S.lyricOff-lineStart)/lineDur));
 
   var text=curLine.text;
-  var fontSize=Math.min(72,Math.max(28,w/(text.length*0.6)));
+  var fontSize=Math.min(68,Math.max(32,w/(text.length*0.55)));
   ctx.save();
   ctx.font="700 "+fontSize+"px -apple-system,'PingFang SC',sans-serif";
   ctx.textAlign="center";ctx.textBaseline="middle";
@@ -399,47 +394,52 @@ function drawIL(){
   var x=startX;
 
   for(var i=0;i<chars.length;i++){
-    var charCenter=(i+0.5)/chars.length;
-    var dist=Math.abs(charProg-charCenter);
-    var brightness=Math.max(0.12,1-dist*3.5);
+    // Wider smooth gradient: each char brightness based on distance from current position
+    var charPos=i/chars.length;
+    var diff=charProg-charPos;
+    // Bright range: 0.3 ahead, 0.1 behind (wider)
+    var brightness;
+    if(diff>=0){brightness=Math.max(0.2,1-diff*4)} // behind current: slow fade
+    else{brightness=Math.max(0.2,1+diff*3)} // ahead: slower fade
     brightness=Math.min(1,brightness);
-    // Smooth easing
-    brightness=brightness*brightness*(3-2*brightness); // smoothstep
+    // Smoothstep for buttery transition
+    brightness=brightness*brightness*(3-2*brightness);
+
     ctx.save();
-    var r=Math.round(168+(240-168)*brightness);
-    var g=Math.round(246+(252-246)*brightness);
-    var b=Math.round(255+(255-255)*brightness);
-    ctx.fillStyle="rgba("+r+","+g+","+b+","+(0.15+brightness*0.85)+")";
-    ctx.shadowBlur=brightness*28;
-    ctx.shadowColor="rgba(10,132,255,"+brightness*0.7+")";
-    ctx.fillText(chars[i],x+widths[i]/2,h*.42);
+    // Color interpolation: dim blue → bright white-blue
+    var rr=Math.round(120+135*brightness);
+    var gg=Math.round(200+55*brightness);
+    var bb=Math.round(255);
+    var aa=0.2+brightness*0.8;
+    ctx.fillStyle="rgba("+rr+","+gg+","+bb+","+aa+")";
+    ctx.shadowBlur=brightness*30;
+    ctx.shadowColor="rgba(0,122,255,"+brightness*0.8+")";
+    ctx.fillText(chars[i],x+widths[i]/2,h*.4);
     ctx.restore();
     x+=widths[i];
   }
   ctx.restore();
 
-  // 4. Translation
-  if(showTrans&&transLines.length&&ci>=0){
+  // ── 4. Translation ──
+  if(showTrans&&transLines.length){
     var trText=findTr(curLine.time);
     if(trText){
-      var trFs=Math.min(22,Math.max(14,w/(trText.length*0.65)));
-      ctx.save();ctx.font="400 "+trFs+"px -apple-system,'PingFang SC',sans-serif";
+      ctx.save();ctx.font="400 "+Math.min(20,Math.max(14,w/(trText.length*0.6)))+"px -apple-system,'PingFang SC',sans-serif";
       ctx.textAlign="center";ctx.textBaseline="middle";
-      ctx.fillStyle="rgba(255,255,255,.35)";
-      ctx.fillText(trText,w/2,h*.42+fontSize*.75);
+      ctx.fillStyle="rgba(255,255,255,.3)";
+      ctx.fillText(trText,w/2,h*.4+fontSize*.7);
       ctx.restore();
     }
   }
 
-  // 5. Next line preview
+  // ── 5. Next line preview ──
   if(ci+1<allLines.length){
     var nx=allLines[ci+1];
-    var nxFs=Math.min(18,Math.max(12,w/(nx.text.length*0.7)));
-    ctx.save();ctx.font="400 "+nxFs+"px -apple-system,'PingFang SC',sans-serif";
+    ctx.save();ctx.font="400 "+Math.min(18,Math.max(13,w/(nx.text.length*0.7)))+"px -apple-system,'PingFang SC',sans-serif";
     ctx.textAlign="center";ctx.textBaseline="middle";
-    ctx.globalAlpha=0.18;
-    ctx.fillStyle="rgba(168,246,255,0.5)";
-    ctx.fillText(nx.text,w/2,h*.78);
+    ctx.globalAlpha=0.2;
+    ctx.fillStyle="rgba(168,246,255,0.6)";
+    ctx.fillText(nx.text,w/2,h*.75);
     ctx.restore();
   }
 }
