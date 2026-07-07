@@ -1058,176 +1058,159 @@ function initWaveform(){if(waveformInited)return;try{audioCtx=new(window.AudioCo
 var mainWaveCanvas,mainWaveCtx;
 function initMainWaveform(){mainWaveCanvas=$("mainWaveform");if(mainWaveCanvas)mainWaveCtx=mainWaveCanvas.getContext("2d");}
 function drawMainWaveform(){
-  if(!mainWaveCtx||!analyser||!freqData||!state.isPlaying)return;
+  if(!mainWaveCtx||!mainWaveCanvas)return;
+  if(!analyser||!freqData){return;}
   analyser.getByteFrequencyData(freqData);
-  var dpr=window.devicePixelRatio||1;
-  var w=mainWaveCanvas.width=mainWaveCanvas.clientWidth*dpr;
-  var h=mainWaveCanvas.height=80*dpr;
+  var w=mainWaveCanvas.width=mainWaveCanvas.clientWidth;
+  var h=mainWaveCanvas.height=mainWaveCanvas.clientHeight;
+  if(w<10)return;
   var ctx=mainWaveCtx;ctx.clearRect(0,0,w,h);
   var points=64;var step=Math.floor(freqData.length/points);
-  var samples=[];for(var i=0;i<points;i++){var sum=0;for(var j=0;j<step;j++)sum+=freqData[i*step+j];samples.push(sum/step/255);}
-  var layers=[{blur:12*dpr,width:2.5*dpr,alpha:0.4,yOff:0},{blur:6*dpr,width:1.5*dpr,alpha:0.5,yOff:-2*dpr},{blur:2*dpr,width:1*dpr,alpha:0.7,yOff:-3*dpr}];
-  for(var l=0;l<layers.length;l++){var layer=layers[l];ctx.save();ctx.beginPath();ctx.lineWidth=layer.width;ctx.lineJoin="round";ctx.lineCap="round";ctx.globalAlpha=layer.alpha;ctx.shadowBlur=layer.blur;ctx.shadowColor="rgba(0,122,255,0.4)";var grad=ctx.createLinearGradient(0,0,w,0);grad.addColorStop(0,"rgba(0,122,255,0.1)");grad.addColorStop(0.3,"rgba(0,122,255,0.6)");grad.addColorStop(0.5,"rgba(64,156,255,0.8)");grad.addColorStop(0.7,"rgba(0,122,255,0.6)");grad.addColorStop(1,"rgba(0,122,255,0.1)");ctx.strokeStyle=grad;var sliceW=w/(points-1);var baseY=h-4*dpr;var amp=(h-8*dpr)*0.5;for(var i=0;i<points;i++){var x=i*sliceW;var val=samples[i];var wave=Math.sin(i*0.3+Date.now()*0.002)*0.1;var y=baseY-(val+wave)*amp+layer.yOff;if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);}ctx.stroke();ctx.restore();}
+  var samples=[];
+  for(var i=0;i<points;i++){var sum=0;for(var j=0;j<step;j++)sum+=freqData[i*step+j];samples.push(sum/step/255);}
+  // 3层波形
+  var layers=[{blur:10,alpha:0.35,width:2,yOff:0},{blur:5,alpha:0.45,width:1.5,yOff:-1},{blur:2,alpha:0.6,width:1,yOff:-2}];
+  for(var l=0;l<layers.length;l++){var L=layers[l];
+    ctx.save();ctx.beginPath();ctx.lineWidth=L.width;ctx.lineJoin="round";ctx.lineCap="round";
+    ctx.globalAlpha=L.alpha;ctx.shadowBlur=L.blur;ctx.shadowColor="rgba(0,122,255,0.4)";
+    var grad=ctx.createLinearGradient(0,0,w,0);
+    grad.addColorStop(0,"rgba(0,122,255,0.05)");grad.addColorStop(0.3,"rgba(0,122,255,0.5)");
+    grad.addColorStop(0.5,"rgba(64,156,255,0.7)");grad.addColorStop(0.7,"rgba(0,122,255,0.5)");
+    grad.addColorStop(1,"rgba(0,122,255,0.05)");ctx.strokeStyle=grad;
+    var sliceW=w/(points-1);var baseY=h-3;var amp=(h-6)*0.5;
+    for(var i=0;i<points;i++){var x=i*sliceW;var y=baseY-samples[i]*amp+L.yOff;
+      if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);}
+    ctx.stroke();ctx.restore();}
 }
-var ilCanvasCtx,ilCanvas;
 // ═══ FULLSCREEN LYRICS CANVAS (全部用Canvas绘制) ═══
 var ilCanvasCtx,ilCanvas;
-var curParticles=[];   // 当前歌词粒子
-var bgStarParticles=[]; // 背景星空粒子
+var curParticles=[];
+var bgStars=[];
 var prevLyricIdx=-2;
-var PCOUNT=400;
+var PCOUNT=500;
 var CONVERGE=0.06;
 
-function initILCanvas(){ilCanvas=$("ilCanvas");if(ilCanvas)ilCanvasCtx=ilCanvas.getContext("2d");}
-function dpr(){return window.devicePixelRatio||1;}
+function initILCanvas(){ilCanvas=$("ilCanvas");if(ilCanvas){ilCanvasCtx=ilCanvas.getContext("2d");}}
 
-// 采样文字像素位置
-function getTextPositions(text,w,h){
+// 采样文字像素位置（用固定大小的采样画布）
+function getTextPositions(text){
+  var sw=800,sh=400;
   var c=document.createElement("canvas"),ctx=c.getContext("2d");
-  c.width=w;c.height=h;
-  var fs=Math.min(64,Math.max(28,Math.floor(w/(text.length*1.1))));
-  ctx.clearRect(0,0,w,h);
+  c.width=sw;c.height=sh;
+  ctx.fillStyle="#000";ctx.fillRect(0,0,sw,sh);
+  var fs=Math.min(72,Math.max(24,Math.floor(sw/(text.length*1.2))));
   ctx.fillStyle="#fff";
-  ctx.font="800 "+fs+"px -apple-system,'PingFang SC','Microsoft YaHei',sans-serif";
+  ctx.font="bold "+fs+"px sans-serif";
   ctx.textAlign="center";ctx.textBaseline="middle";
-  ctx.fillText(text,w/2,h/2);
-  var imgData=ctx.getImageData(0,0,w,h).data;
+  ctx.fillText(text,sw/2,sh/2);
+  var imgData=ctx.getImageData(0,0,sw,sh).data;
   var pts=[];
-  for(var y=0;y<h;y+=3){for(var x=0;x<w;x+=3){
-    if(imgData[(y*w+x)*4+3]>80)pts.push({x:x,y:y});
+  for(var y=0;y<sh;y+=3){for(var x=0;x<sw;x+=3){
+    var idx=(y*sw+x)*4;
+    if(imgData[idx]>200)pts.push({x:x,y:y});
   }}
   return pts;
 }
 
-// 创建粒子（从随机方向飞入）
-function mkParticle(tx,ty,w,h){
+// 创建粒子
+function mkP(tx,ty,w,h){
   var angle=Math.random()*Math.PI*2;
-  var dist=Math.max(w,h)*(0.5+Math.random()*0.5);
-  return{
-    x:w/2+Math.cos(angle)*dist,
-    y:h/2+Math.sin(angle)*dist,
-    tx:tx,ty:ty,
-    vx:(Math.random()-0.5)*4,
-    vy:(Math.random()-0.5)*4,
-    r:Math.random()*2.2+0.8,
-    phase:Math.random()*6.28,
-    arrived:false,
-    hue:Math.random()>0.5?210:200
+  var dist=Math.max(w,h)*(0.4+Math.random()*0.6);
+  return{x:w/2+Math.cos(angle)*dist,y:h/2+Math.sin(angle)*dist,
+    tx:tx,ty:ty,vx:0,vy:0,r:Math.random()*2+0.8,
+    phase:Math.random()*6.28,arrived:false
   };
 }
 
-// 创建背景星空粒子（从未来歌词采样）
-function makeStarfield(w,h){
-  bgStarParticles=[];
-  var futureTexts=[];
+// 将采样坐标映射到实际canvas坐标
+function mapPos(pts,w,h){
+  var sw=800,sh=400;
+  var sx=w/sw,sy=h/sh;
+  var scale=Math.min(sx,sy);
+  var ox=(w-sw*scale)/2;
+  var oy=(h-sh*scale)/2;
+  return pts.map(function(p){return{x:p.x*scale+ox,y:p.y*scale+oy};});
+}
+
+// 更新背景星空
+function updateStars(w,h){
+  bgStars=[];
   var startIdx=Math.max(0,state.currentLyricIndex+1);
-  for(var i=startIdx;i<Math.min(startIdx+4,state.lyricLines.length);i++){
-    futureTexts.push(state.lyricLines[i].text);
+  var future=[];
+  for(var i=startIdx;i<Math.min(startIdx+3,state.lyricLines.length);i++){
+    future.push(state.lyricLines[i].text);
   }
-  if(!futureTexts.length)return;
-  futureTexts.forEach(function(txt,idx){
-    var pts=getTextPositions(txt,w*0.35,h*0.25);
-    var offsetX=(idx%2)*w*0.5+w*0.1;
-    var offsetY=Math.floor(idx/2)*h*0.35+h*0.15;
-    var step=Math.max(1,Math.floor(pts.length/60));
-    for(var i=0;i<pts.length&&bgStarParticles.length<200;i+=step){
-      bgStarParticles.push({
-        x:pts[i].x*0.35+offsetX+Math.random()*10-5,
-        y:pts[i].y*0.25+offsetY+Math.random()*10-5,
+  future.forEach(function(txt,fi){
+    var pts=getTextPositions(txt);
+    var mapped=mapPos(pts,w,h);
+    var offsetX=(fi%2)*w*0.4+w*0.05;
+    var offsetY=Math.floor(fi/2)*h*0.35+h*0.1;
+    var step=Math.max(1,Math.floor(mapped.length/50));
+    for(var i=0;i<mapped.length&&bgStars.length<150;i+=step){
+      bgStars.push({
+        x:mapped[i].x*0.5+offsetX,
+        y:mapped[i].y*0.5+offsetY,
         r:Math.random()*1.2+0.3,
         phase:Math.random()*6.28,
-        alpha:Math.random()*0.2+0.05
+        alpha:Math.random()*0.25+0.08
       });
     }
   });
 }
 
-// 主绘制
 function drawILCanvas(){
   if(!ilCanvasCtx||!state.lyricsOpen)return;
-  var D=dpr();
-  var w=ilCanvas.width=ilCanvas.parentElement.clientWidth*D;
-  var h=ilCanvas.height=ilCanvas.parentElement.clientHeight*D;
+  var w=ilCanvas.width=ilCanvas.parentElement.clientWidth;
+  var h=ilCanvas.height=ilCanvas.parentElement.clientHeight;
+  if(w<10||h<10)return;
   var ctx=ilCanvasCtx;
   ctx.clearRect(0,0,w,h);
   var t=Date.now()*0.001;
-  var bass=0,mid=0;
-  if(analyser&&freqData){analyser.getByteFrequencyData(freqData);
-    for(var i=0;i<8;i++)bass+=freqData[i];for(var i=8;i<32;i++)mid+=freqData[i];
-    bass=bass/8/255;mid=mid/24/255;
-  }
 
-  // ═══ 1. 渐变背景 ═══
-  var bgGrad=ctx.createRadialGradient(w/2,h*0.45,0,w/2,h*0.45,Math.max(w,h)*0.7);
-  bgGrad.addColorStop(0,"rgba(8,18,40,"+(0.4+bass*0.3)+")");
-  bgGrad.addColorStop(0.4,"rgba(5,12,28,"+(0.25+bass*0.15)+")");
-  bgGrad.addColorStop(1,"rgba(6,10,20,0.15)");
-  ctx.fillStyle=bgGrad;ctx.fillRect(0,0,w,h);
+  // ═══ 渐变背景 ═══
+  var bg=ctx.createRadialGradient(w/2,h*0.45,0,w/2,h*0.45,Math.max(w,h)*0.6);
+  bg.addColorStop(0,"rgba(10,20,45,0.5)");bg.addColorStop(0.5,"rgba(5,12,30,0.3)");bg.addColorStop(1,"rgba(6,10,20,0.1)");
+  ctx.fillStyle=bg;ctx.fillRect(0,0,w,h);
 
-  // 封面颜色光晕
-  ctx.save();ctx.globalAlpha=0.08+bass*0.05;
-  var accent=window.getComputedStyle(document.documentElement).getPropertyValue("--accent").trim()||"rgb(10,132,255)";
-  var cGlow=ctx.createRadialGradient(w/2,h*0.5,0,w/2,h*0.5,Math.max(w,h)*0.5);
-  cGlow.addColorStop(0,accent.replace(")",","+((0.15+bass*0.1))+")").replace("rgb","rgba"));
-  cGlow.addColorStop(1,"rgba(0,0,0,0)");
-  ctx.fillStyle=cGlow;ctx.fillRect(0,0,w,h);ctx.restore();
-
-  // ═══ 2. 背景星空（未来歌词粒子）═══
+  // ═══ 背景星空 ═══
   ctx.save();
-  for(var i=0;i<bgStarParticles.length;i++){
-    var s=bgStarParticles[i];
-    var bx=s.x+Math.sin(t*0.4+s.phase)*6*D;
-    var by=s.y+Math.cos(t*0.35+s.phase)*5*D;
+  for(var i=0;i<bgStars.length;i++){
+    var s=bgStars[i];
+    var bx=s.x+Math.sin(t*0.4+s.phase)*5;
+    var by=s.y+Math.cos(t*0.35+s.phase)*4;
     var a=s.alpha*(0.5+Math.sin(t*1.2+s.phase)*0.4);
-    ctx.beginPath();ctx.arc(bx*D,by*D,s.r*D,0,6.28);
+    ctx.beginPath();ctx.arc(bx,by,s.r,0,6.28);
     ctx.fillStyle="rgba(10,132,255,"+a+")";
-    ctx.shadowBlur=3*D;ctx.shadowColor="rgba(10,132,255,"+a*0.5+")";
+    ctx.shadowBlur=3;ctx.shadowColor="rgba(10,132,255,"+a*0.4+")";
     ctx.fill();
   }
   ctx.shadowBlur=0;
-  // 背景连线
-  ctx.lineWidth=0.12*D;
-  for(var i=0;i<bgStarParticles.length;i+=3){
-    for(var j=i+3;j<Math.min(i+10,bgStarParticles.length);j+=2){
-      var dx=(bgStarParticles[i].x-bgStarParticles[j].x)*D;
-      var dy=(bgStarParticles[i].y-bgStarParticles[j].y)*D;
+  for(var i=0;i<bgStars.length;i+=3){
+    for(var j=i+3;j<Math.min(i+8,bgStars.length);j+=2){
+      var dx=bgStars[i].x-bgStars[j].x;var dy=bgStars[i].y-bgStars[j].y;
       var dd=Math.sqrt(dx*dx+dy*dy);
-      if(dd<35*D){var la=(1-dd/(35*D))*0.05;if(la>0.002){
-        ctx.beginPath();ctx.moveTo(bgStarParticles[i].x*D,bgStarParticles[i].y*D);
-        ctx.lineTo(bgStarParticles[j].x*D,bgStarParticles[j].y*D);
-        ctx.strokeStyle="rgba(10,132,255,"+la+")";ctx.stroke();}}}}
+      if(dd<30){ctx.beginPath();ctx.moveTo(bgStars[i].x,bgStars[i].y);ctx.lineTo(bgStars[j].x,bgStars[j].y);ctx.strokeStyle="rgba(10,132,255,0.04)";ctx.stroke();}}}
   ctx.restore();
 
-  // ═══ 3. 微弱极光 ═══
-  ctx.save();ctx.globalAlpha=0.06+bass*0.04;
-  for(var a=0;a<2;a++){
-    var ay=h*(0.3+a*0.4)+Math.sin(t*0.15+a*2)*30*D;
-    var aG=ctx.createLinearGradient(0,ay-40*D,0,ay+40*D);
-    aG.addColorStop(0,"rgba(10,132,255,0)");aG.addColorStop(0.5,"rgba(64,156,255,0.15)");aG.addColorStop(1,"rgba(10,132,255,0)");
-    ctx.fillStyle=aG;ctx.beginPath();ctx.moveTo(0,ay);
-    for(var x=0;x<=w;x+=8*D){var fv=analyser&&freqData?freqData[Math.floor((x/w)*32)]/255:0.02;ctx.lineTo(x,ay+Math.sin(x*0.001+t*0.2+a)*12*D+fv*8*D);}
-    ctx.lineTo(w,ay+40*D);ctx.lineTo(0,40*D+ay);ctx.closePath();ctx.fill();}
-  ctx.restore();
-
-  // ═══ 4. 当前歌词粒子聚合 ═══
-  // 歌词切换时重新生成粒子
+  // ═══ 歌词切换 ═══
   if(state.currentLyricIndex!==prevLyricIdx){
     prevLyricIdx=state.currentLyricIndex;
     var text="";
     if(state.currentLyricIndex>=0&&state.lyricLines[state.currentLyricIndex])
       text=state.lyricLines[state.currentLyricIndex].text;
     if(text){
-      var pts=getTextPositions(text,w,h);
-      var newP=[];var maxP=Math.min(pts.length,PCOUNT);
-      var step=Math.max(1,Math.floor(pts.length/maxP));
-      for(var i=0;i<pts.length&&newP.length<maxP;i+=step)
-        newP.push(mkParticle(pts[i].x,pts[i].y,w,h));
-      curParticles=newP;
+      var rawPts=getTextPositions(text);
+      var mappedPts=mapPos(rawPts,w,h);
+      curParticles=[];
+      var step=Math.max(1,Math.floor(mappedPts.length/PCOUNT));
+      for(var i=0;i<mappedPts.length&&curParticles.length<PCOUNT;i+=step){
+        curParticles.push(mkP(mappedPts[i].x,mappedPts[i].y,w,h));
+      }
     }else{curParticles=[];}
-    makeStarfield(w,h);
+    updateStars(w,h);
   }
 
-  // 绘制当前歌词粒子
+  // ═══ 绘制当前歌词粒子 ═══
   ctx.save();
   for(var i=0;i<curParticles.length;i++){
     var p=curParticles[i];
@@ -1235,33 +1218,29 @@ function drawILCanvas(){
     var dist=Math.sqrt(dx*dx+dy*dy);
     if(dist>1){p.vx+=dx*CONVERGE;p.vy+=dy*CONVERGE;}
     p.vx*=0.84;p.vy*=0.84;
-    p.x+=p.vx+Math.sin(t*2+p.phase)*0.3*D;
-    p.y+=p.vy+Math.cos(t*1.8+p.phase)*0.3*D;
+    p.x+=p.vx+Math.sin(t*2+p.phase)*0.2;
+    p.y+=p.vy+Math.cos(t*1.8+p.phase)*0.2;
     if(dist<2&&!p.arrived)p.arrived=true;
     var alpha=p.arrived?(0.8+Math.sin(t*1.5+p.phase)*0.15):0.3;
-    var sz=p.r*D*(p.arrived?1:0.5);
+    var sz=p.r*(p.arrived?1:0.5);
     ctx.beginPath();ctx.arc(p.x,p.y,sz,0,6.28);
-    var sat=p.arrived?"100%":"70%";
-    var light=p.arrived?"65%":"55%";
-    ctx.fillStyle="hsla("+p.hue+","+sat+","+light+","+alpha+")";
-    ctx.shadowBlur=(p.arrived?8:2)*D;
-    ctx.shadowColor="hsla("+p.hue+",100%,60%,"+alpha*0.5+")";
+    var lightness=p.arrived?65:50;
+    ctx.fillStyle="hsla(210,100%,"+lightness+"%,"+alpha+")";
+    ctx.shadowBlur=p.arrived?8:2;
+    ctx.shadowColor="hsla(210,100%,60%,"+alpha*0.5+")";
     ctx.fill();
   }
-  // 到达后连线
-  ctx.lineWidth=0.18*D;ctx.shadowBlur=0;
+  // 连线
+  ctx.lineWidth=0.2;ctx.shadowBlur=0;
   for(var i=0;i<curParticles.length;i+=3){
     if(!curParticles[i].arrived)continue;
-    for(var j=i+3;j<Math.min(i+12,curParticles.length);j+=2){
+    for(var j=i+3;j<Math.min(i+10,curParticles.length);j+=2){
       if(!curParticles[j].arrived)continue;
       var dxx=curParticles[i].x-curParticles[j].x;
       var dyy=curParticles[i].y-curParticles[j].y;
       var dd=Math.sqrt(dxx*dxx+dyy*dyy);
-      if(dd<16*D){var la=(1-dd/(16*D))*0.1;if(la>0.003){
-        ctx.beginPath();ctx.moveTo(curParticles[i].x,curParticles[i].y);
-        ctx.lineTo(curParticles[j].x,curParticles[j].y);
-        ctx.strokeStyle="hsla(210,100%,65%,"+la+")";ctx.stroke();}}}}
-  ctx.restore();ctx.shadowBlur=0;
+      if(dd<14){ctx.beginPath();ctx.moveTo(curParticles[i].x,curParticles[i].y);ctx.lineTo(curParticles[j].x,curParticles[j].y);ctx.strokeStyle="rgba(100,180,255,0.08)";ctx.stroke();}}}
+  ctx.restore();
 }
 function animationLoop(){if(state.isPlaying&&audio.duration){updateLyricProgress();}if(state.lyricsOpen)drawILCanvas();drawMainWaveform();requestAnimationFrame(animationLoop);}
 requestAnimationFrame(animationLoop);
