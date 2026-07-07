@@ -120,8 +120,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 .lyric-line .translation{font-size:12px;color:var(--text2);margin-top:2px}
 .lyric-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:12px;color:var(--text3)}
 .lyric-empty svg{width:40px;height:40px;opacity:.15}
-.immersive-lyrics{position:fixed;inset:0;z-index:1000;display:none;flex-direction:column;color:#fff;overflow:hidden;transition:background .5s}
-.immersive-lyrics.show{display:flex}
+.immersive-lyrics{position:fixed;inset:0;z-index:1000;display:none;flex-direction:column;color:#fff;overflow:hidden;transition:opacity .5s var(--spring)}
+.immersive-lyrics.show{display:flex;animation:ilEnter .6s var(--spring) both}
+@keyframes ilEnter{0%{opacity:0;transform:scale(1.03)}100%{opacity:1;transform:scale(1)}}
 [data-theme="light"] .immersive-lyrics{background:linear-gradient(180deg,#080C18 0%,#0E1828 50%,#080C18 100%)}
 [data-theme="dark"] .immersive-lyrics{background:linear-gradient(180deg,#050810 0%,#0A1020 50%,#050810 100%)}
 .il-bg{position:absolute;inset:-80px;background-size:cover;background-position:center;filter:blur(100px) saturate(1.4) brightness(.2);transform:scale(1.3);opacity:.55}
@@ -320,7 +321,7 @@ function initMW(){mwc=$("mainWaveform");if(mwc)mwCtx=mwc.getContext("2d")}
 function drawMW(){if(!mwc)return;if(!mwCtx)mwCtx=mwc.getContext("2d");var w=mwc.width=window.innerWidth,h=mwc.height=60;if(w<10)return;var ctx=mwCtx,t=Date.now()*.001;ctx.clearRect(0,0,w,h);var has=analyser&&freqData;if(has)analyser.getByteFrequencyData(freqData);var bc=100,bw=w/bc,bg=2;for(var i=0;i<bc;i++){var fv=0;if(has){var fi=Math.floor((i/bc)*freqData.length*.7);fv=freqData[fi]/255}else{fv=.03+Math.sin(i*.12+t*1.5)*.02+Math.sin(i*.08+t*.8)*.015}var bh=Math.max(2,fv*h*.85),x=i*bw+bg/2,y=h-bh;var gr=ctx.createLinearGradient(x,h,x,y);gr.addColorStop(0,"rgba(0,122,255,.06)");gr.addColorStop(.4,"rgba(0,122,255,.5)");gr.addColorStop(.7,"rgba(64,156,255,.75)");gr.addColorStop(1,"rgba(100,180,255,.9)");ctx.fillStyle=gr;ctx.fillRect(x,y,bw-bg,bh);if(fv>.1){ctx.beginPath();ctx.arc(x+(bw-bg)/2,y,1.5,0,6.28);ctx.fillStyle="rgba(128,200,255,"+fv*.6+")";ctx.fill()}}}
 
 // IL Canvas
-var ilCtx,ilCv;
+var ilCtx,ilCv,ilFade=1,ilLastIdx=-2;
 function initIL(){ilCv=$("ilCanvas");if(ilCv)ilCtx=ilCv.getContext("2d")}
 function drawIL(){
   if(!ilCtx||!S.lyricsOpen)return;
@@ -331,6 +332,11 @@ function drawIL(){
   ctx.clearRect(0,0,w,h);
   if(!S.lines.length)return;
   var allLines=S.lines,ci=S.lyricIdx;
+
+  // Fade transition on lyric change
+  if(ci!==ilLastIdx){ilLastIdx=ci;ilFade=0}
+  if(ilFade<1)ilFade=Math.min(1,ilFade+0.025); // ~40 frames to full
+  ctx.save();ctx.globalAlpha=ilFade;
 
   // ═══ 1. Audio visualizer — smooth bottom equalizer ═══
   if(analyser&&freqData){
@@ -464,6 +470,7 @@ function drawIL(){
     ctx.globalAlpha=0.12;ctx.fillStyle="rgba(168,246,255,0.5)";
     ctx.fillText(nx.text,w/2,h*.75);ctx.restore();
   }
+  ctx.restore(); // close fade alpha
 }
 
 // Controls
