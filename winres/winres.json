@@ -16,18 +16,7 @@
         "description": "MelodyV3 Music Player",
         "minimum-os": "win7",
         "execution-level": "as invoker",
-        "ui-access": false,
-        "auto-elevate": false,
-        "dpi-awareness": "system",
-        "disable-theming": false,
-        "disable-window-filtering": false,
-        "high-resolution-scrolling-aware": false,
-        "ultra-high-resolution-scrolling-aware": false,
-        "long-path-aware": false,
-        "printer-driver-isolation": false,
-        "gdi-scaling": false,
-        "segment-heap": false,
-        "use-common-controls-v6": false
+        "dpi-awareness": "system"
       }
     }
   },
@@ -40,18 +29,9 @@
         },
         "info": {
           "0409": {
-            "Comments": "",
-            "CompanyName": "",
             "FileDescription": "MelodyV3 Music Player",
-            "FileVersion": "3.2.0.0",
-            "InternalName": "MelodyV3",
-            "LegalCopyright": "",
-            "LegalTrademarks": "",
-            "OriginalFilename": "MelodyV3.exe",
-            "PrivateBuild": "",
             "ProductName": "MelodyV3",
-            "ProductVersion": "3.2.0.0",
-            "SpecialBuild": ""
+            "ProductVersion": "3.2.0.0"
           }
         }
       }
